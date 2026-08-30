@@ -1,0 +1,36 @@
+{
+  "taxonomy": {
+    "pii": {
+      "attributes": 282,
+      "products": 215
+    },
+    "regulatory": {
+      "attributes": 2636,
+      "products": 364
+    },
+    "sensitive": {
+      "attributes": 87,
+      "products": 46
+    },
+    "reference": {
+      "attributes": 4740,
+      "products": 366
+    },
+    "derived": {
+      "attributes": 951,
+      "products": 366
+    },
+    "financial": {
+      "attributes": 783,
+      "products": 237
+    }
+  },
+  "handling": {
+    "pii": "Privacy Act APPs; masking and access control required",
+    "sensitive": "Privacy Act sensitive information; restricted access, purpose limited",
+    "regulatory": "feeds an APRA, ASIC, AUSTRAC or ATO obligation; retention per instrument",
+    "financial": "material to financial reporting; CPG 235 quality controls",
+    "reference": "shared reference data; steward-owned",
+    "derived": "computed; lineage must state the derivation"
+  }
+}

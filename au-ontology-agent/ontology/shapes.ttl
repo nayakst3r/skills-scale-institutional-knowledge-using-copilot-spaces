@@ -1,0 +1,41 @@
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix bank: <https://example.org/ontology/au-bank#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+bank:ClassShape a sh:NodeShape ;
+  sh:targetClass owl:Class ;
+  sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:datatype xsd:string ;
+                sh:message "every class needs exactly one label" ] .
+
+bank:PropertyShape a sh:NodeShape ;
+  sh:targetClass owl:ObjectProperty ;
+  sh:property [ sh:path rdfs:label  ; sh:minCount 1 ] ;
+  sh:property [ sh:path rdfs:domain ; sh:minCount 1 ;
+                sh:message "an object property with no domain is untyped" ] ;
+  sh:property [ sh:path rdfs:range  ; sh:minCount 1 ] .
+
+bank:ScenarioShape a sh:NodeShape ;
+  sh:targetClass bank:Scenario ;
+  sh:property [ sh:path rdfs:label ; sh:minCount 1 ] ;
+  sh:property [ sh:path bank:validationStatus ; sh:minCount 1 ;
+                sh:in ( "validated" "corrected" "notVerified" "proposed" ) ;
+                sh:message "confidence must be explicit, never implied" ] ;
+  sh:property [ sh:path bank:regulatoryReference ; sh:minCount 1 ;
+                sh:message "a scenario with no regulator is not a banking scenario" ] ;
+  sh:property [ sh:path bank:step ; sh:minCount 2 ;
+                sh:message "a scenario needs at least two steps to be a walk" ] .
+
+bank:StepShape a sh:NodeShape ;
+  sh:targetObjectsOf bank:step ;
+  sh:property [ sh:path bank:order     ; sh:minCount 1 ; sh:datatype xsd:integer ] ;
+  sh:property [ sh:path bank:subject   ; sh:minCount 1 ; sh:nodeKind sh:IRI ] ;
+  sh:property [ sh:path bank:predicate ; sh:minCount 1 ; sh:nodeKind sh:IRI ] ;
+  sh:property [ sh:path bank:object    ; sh:minCount 1 ; sh:nodeKind sh:IRI ] .
+
+bank:ApplicabilityShape a sh:NodeShape ;
+  sh:targetObjectsOf bank:applicability ;
+  sh:property [ sh:path bank:bank ; sh:minCount 1 ] ;
+  sh:property [ sh:path bank:status ; sh:minCount 1 ;
+                sh:in ( "applicable" "appliesWithVariation" "notApplicable" "unverified" ) ] .

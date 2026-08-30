@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=1200"]   # the viewer is ~880KB by design
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: gate
+        name: ontology gate and structural contract
+        entry: make gate
+        language: system
+        pass_filenames: false

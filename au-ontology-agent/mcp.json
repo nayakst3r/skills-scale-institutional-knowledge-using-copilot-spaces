@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "au-bank-ontology": {
+      "command": "python",
+      "args": ["mcp_servers/ontology_store.py"],
+      "cwd": "."
+    },
+    "au-cdr-products": {
+      "command": "python",
+      "args": ["mcp_servers/cdr_products.py"],
+      "cwd": "."
+    }
+  }
+}

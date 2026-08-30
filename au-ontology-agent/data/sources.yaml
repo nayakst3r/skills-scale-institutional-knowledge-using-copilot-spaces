@@ -1,0 +1,218 @@
+sources:
+- id: cdr_register
+  tier: 1
+  name: CDR Register - data holder brands
+  url: https://api.cdr.gov.au/cdr-register/v1/banking/data-holders/brands/summary
+  cadence: daily
+  format: json
+  asserts:
+  - Brand
+  - LicensedADI
+  licence: MIT (Consumer Data Standards)
+  wrappable: wrappable
+  licence_note: public directory, no auth
+- id: cdr_products
+  tier: 1
+  name: CDR banking product reference data (per brand, unauthenticated)
+  url_template: '{public_base_uri}/cds-au/v1/banking/products'
+  cadence: daily
+  format: json
+  headers:
+    x-v: '4'
+    x-min-v: '3'
+  asserts:
+  - Product
+  - Feature
+  - FeeSchedule
+  - EligibilityRule
+  - Brand
+  licence: MIT (Consumer Data Standards)
+  wrappable: wrappable
+  licence_note: mandated unauthenticated public endpoint
+- id: apra_adi_register
+  tier: 1
+  name: APRA register of authorised deposit-taking institutions
+  url: https://www.apra.gov.au/register-of-authorised-deposit-taking-institutions
+  cadence: monthly
+  format: html_table
+  asserts:
+  - LicensedADI
+  - ForeignParent
+  - NOHC
+  licence: APRA site terms - verify
+  wrappable: wrappable_with_care
+  licence_note: check reuse terms before publishing
+- id: apra_madis
+  tier: 1
+  name: APRA Monthly ADI Statistics
+  url: https://www.apra.gov.au/monthly-authorised-deposit-taking-institution-statistics
+  cadence: monthly
+  format: xlsx
+  asserts: []
+  licence: APRA site terms - verify
+  wrappable: wrappable_with_care
+  licence_note: xlsx download
+- id: asic_registers
+  tier: 1
+  name: ASIC professional registers (AFS licensees, credit licensees)
+  url: https://data.gov.au/data/dataset/asic-financial-services-credit-licence
+  cadence: weekly
+  format: csv
+  asserts:
+  - Distributor
+  - Issuer
+  - Broker
+  - Aggregator
+  licence: data.gov.au CC BY
+  wrappable: wrappable
+  licence_note: bulk CSV
+- id: legislation_register
+  tier: 1
+  name: Federal Register of Legislation
+  url: https://www.legislation.gov.au/
+  cadence: daily
+  format: rss
+  asserts:
+  - RegulatoryReference
+  licence: CC BY 4.0
+  wrappable: wrappable
+  licence_note: federal register
+- id: abn_lookup
+  tier: 1
+  name: ABN Lookup web services
+  url: https://abr.business.gov.au/
+  cadence: on_demand
+  format: json
+  asserts:
+  - LegalEntity
+  - Organisation
+  licence: Web Services Agreement, per-client GUID
+  wrappable: wrappable_with_care
+  licence_note: rate limits not published; bulk extract on data.gov.au is CC BY 3.0 AU
+- id: gleif
+  tier: 1
+  name: GLEIF LEI records
+  url: https://api.gleif.org/api/v1/lei-records
+  cadence: monthly
+  format: json
+  asserts:
+  - LegalEntity
+  licence: CC0 1.0
+  wrappable: wrappable
+  licence_note: most permissive source in the set
+- id: apra_standards
+  tier: 2
+  name: APRA prudential and reporting standards
+  url: https://www.apra.gov.au/prudential-standards-and-guidance
+  cadence: weekly
+  format: pdf
+  asserts: []
+  licence: APRA site terms - verify
+  wrappable: wrappable_with_care
+  licence_note: PDF, tier 2 extraction
+- id: asic_guides
+  tier: 2
+  name: ASIC regulatory guides
+  url: https://asic.gov.au/regulatory-resources/find-a-document/regulatory-guides/
+  cadence: weekly
+  format: pdf
+  asserts: []
+  licence: ASIC site terms - verify
+  wrappable: wrappable_with_care
+  licence_note: PDF, tier 2 extraction
+- id: austrac_rules
+  tier: 2
+  name: AUSTRAC AML/CTF Rules and guidance
+  url: https://www.austrac.gov.au/business/legislation
+  cadence: weekly
+  format: html
+  asserts: []
+  licence: no open licence found
+  wrappable: not_wrappable
+  licence_note: no public API; supervisory data restricted
+- id: rba_payments
+  tier: 2
+  name: RBA payments standards and conclusions papers
+  url: https://www.rba.gov.au/payments-and-infrastructure/
+  cadence: weekly
+  format: html
+  asserts: []
+  licence: CC BY 4.0
+  wrappable: wrappable_with_care
+  licence_note: Cash Rate carries special conditions
+- id: aba_code
+  tier: 2
+  name: ABA Banking Code of Practice
+  url: https://www.ausbanking.org.au/banking-code/
+  cadence: monthly
+  format: pdf
+  asserts: []
+  licence: ABA copyright
+  wrappable: not_wrappable
+  licence_note: reference by citation only
+- id: bank_disclosure
+  tier: 3
+  name: Bank PDS / TMD / key facts sheets
+  url_template: '{brand_site}'
+  cadence: weekly
+  format: pdf
+  asserts: []
+  licence: bank copyright
+  wrappable: not_wrappable
+  licence_note: cite and link, do not redistribute
+- id: industry_press
+  tier: 4
+  name: Industry press and specialist commentary
+  cadence: daily
+  format: rss
+  asserts: []
+  licence: publisher copyright
+  wrappable: not_wrappable
+  licence_note: detection only, never asserts
+- id: cdr_status
+  tier: 1
+  name: CDR Get Status / Get Outages (public)
+  url_template: '{public_base_uri}/cds-au/v1/discovery/status'
+  cadence: daily
+  format: json
+  asserts: []
+  licence: MIT (Consumer Data Standards)
+  wrappable: wrappable
+  licence_note: public, unauthenticated, same base URI as PRD
+- id: afca_datacube
+  tier: 2
+  name: AFCA Datacube
+  url: https://data.afca.org.au/
+  cadence: quarterly
+  format: html
+  asserts: []
+  licence: no stated reuse licence
+  wrappable: not_wrappable
+  licence_note: view-only; redistribution rights uncertain
+- id: land_titles
+  tier: 3
+  name: State land titles registries
+  cadence: on_demand
+  format: varies
+  asserts: []
+  licence: state government, broker-gated
+  wrappable: not_wrappable
+  licence_note: no national register; paywalled per state
+- id: card_scheme_rules
+  tier: 3
+  name: Visa / Mastercard scheme rules
+  cadence: quarterly
+  format: pdf
+  asserts: []
+  licence: proprietary
+  wrappable: not_wrappable
+  licence_note: confidential even in redacted public PDFs
+- id: cdr_consumer_data
+  tier: 1
+  name: CDR consumer data (accounts, balances, transactions)
+  cadence: on_demand
+  format: json
+  asserts: []
+  licence: consent-bound
+  wrappable: requires_accreditation
+  licence_note: CDR accreditation + FAPI + consumer consent, or an accredited intermediary

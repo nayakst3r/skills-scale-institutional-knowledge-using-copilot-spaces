@@ -1,0 +1,50 @@
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Ontology gate
+        run: python agent/validator.py
+
+      - name: Structural contract (ECM)
+        run: python -m agent.model_gates model/model.json
+
+      - name: Structural contract (MVM)
+        run: python -m agent.model_gates model/model.mvm.json
+
+      - name: Model is reproducible from source
+        run: |
+          python -m agent.build_model
+          git diff --exit-code model/model.json model/model.mvm.json \
+            || (echo "::error::model/ is stale - run 'make model' and commit" && exit 1)
+
+      - name: Exports are current
+        run: |
+          python -m agent.export_artifacts
+          git diff --exit-code model/schemas model/diagram model/metrics model/ontology \
+            || (echo "::error::exports are stale - run 'make artefacts' and commit" && exit 1)
+
+      - name: Viewer has no cross-script identifier collisions
+        run: node tests/viewer_check.js viewer/bank-ontology.html
+
+      - name: Audit chain integrity
+        run: |
+          python -c "
+          from agent.audit import AuditLog
+          r = AuditLog().verify()
+          assert r['valid'], r
+          b = AuditLog().segregation_breaches()
+          assert not b, f'segregation of duties breached: {b}'
+          print('audit chain valid;', r.get('records', 0), 'records')"

@@ -1,0 +1,23 @@
+{
+  "cdr_products": {
+    "url": "https://api.example-bank.com.au/cds-au/v1/banking/products",
+    "brand": "ExampleBank",
+    "payload": {"data": {"products": [
+      {"productId": "p1", "name": "Everyday", "productCategory": "TRANS_AND_SAVINGS_ACCOUNTS",
+       "features": [{"featureType": "OFFSET"}, {"featureType": "CARBON_TRACKING"}]},
+      {"productId": "p2", "name": "Green Car Loan", "productCategory": "GREEN_LOANS",
+       "features": [{"featureType": "REDRAW"}]},
+      {"productId": "p3", "name": "Rewards Platinum", "productCategory": "CRED_AND_CHRG_CARDS",
+       "features": [{"featureType": "LOYALTY_PROGRAM"}, {"featureType": "POINTS_TRANSFER"}]}
+    ]}}
+  },
+  "legislation_register": {
+    "url": "https://www.legislation.gov.au/",
+    "brand": "",
+    "payload": [
+      {"title": "Treasury Laws Amendment (Payments Modernisation) Act 2026",
+       "summary": "Amends card surcharging provisions", "commences": "2026-10-01"},
+      {"title": "Agricultural Levies Amendment Regulations", "summary": "unrelated"}
+    ]
+  }
+}

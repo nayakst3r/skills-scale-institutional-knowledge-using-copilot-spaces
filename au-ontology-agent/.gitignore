@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.DS_Store
+.idea/
+.vscode/
+
+# runtime state - never commit
+state/*.jsonl
+state/seen.json
+!state/.gitkeep
+
+# generated artefacts are committed on purpose: they are the deliverable
+# and the diff is how model change is reviewed.
