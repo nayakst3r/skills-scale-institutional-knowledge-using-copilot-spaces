@@ -17,9 +17,13 @@ sources:
   url_template: '{public_base_uri}/cds-au/v1/banking/products'
   cadence: daily
   format: json
+  # x-v 5 confirmed current (bound 2026-07-13); v4 retired 2026-08-10.
+  # Source: ConsumerDataStandardsAustralia/standards @ master,
+  # swagger-gen/api/cds_banking.json + docs/includes/endpoint-version-schedule,
+  # retrieved 2026-08-30. Not yet confirmed against a live data holder response.
   headers:
-    x-v: '4'
-    x-min-v: '3'
+    x-v: '5'
+    x-min-v: '5'
   asserts:
   - Product
   - Feature

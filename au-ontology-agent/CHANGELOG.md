@@ -3,6 +3,20 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The model is versioned as a product, not a project.
 
+## [Unreleased]
+### Fixed
+- `mcp_servers/cdr_products.py` and `data/sources.yaml` sent `x-v: 4` to every
+  CDR banking endpoint from one shared header value. The three endpoints
+  version independently and were three versions apart: Get Data Holder Brands
+  Summary is at v2, Get Products at v5 (v4 retired 2026-08-10), Get Product
+  Detail at v7 (v6 retired 2026-08-10, v4 - the value the code was sending -
+  retired 2025-11-10). Split into per-endpoint headers pinned to the version
+  each endpoint is actually on, sourced against the Consumer Data Standards
+  spec and endpoint-version schedule, retrieved 2026-08-30. **Not yet
+  confirmed against a live data holder response** - this sandbox has no
+  network path to `api.cdr.gov.au` or any data holder host, so the CDR path
+  is still unverified end to end. Re-check the moment that's possible.
+
 ## [0.3.0]
 ### Added
 - Physical model layer in `model/`, following the Databricks
