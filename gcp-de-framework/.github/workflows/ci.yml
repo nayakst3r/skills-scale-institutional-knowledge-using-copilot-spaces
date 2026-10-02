@@ -1,0 +1,69 @@
+name: ci
+on:
+  pull_request:
+  merge_group:          # required for GitHub merge queue
+
+permissions:
+  contents: read
+  id-token: write       # Workload Identity Federation to GCP (no JSON keys)
+  pull-requests: write  # post terraform plan / dry-run cost comments
+
+jobs:
+  principles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install pyyaml pytest
+      - name: Architecture fitness functions
+        run: python tools/check_principles.py .
+      - name: Contract compatibility vs main
+        run: python tools/check_principles.py . --compat-base origin/${{ github.base_ref || 'main' }}
+      - run: pytest tools/tests -q
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install ruff sqlfluff
+      - run: ruff check . && ruff format --check .
+      - run: sqlfluff lint domains --dialect bigquery
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=platform/terraform fmt -check -recursive
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+
+  dataform-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_CI_SA_STG }}       # read-only + dry-run in de-stg
+      - run: npm i -g @dataform/cli
+      - run: dataform compile --vars=env=stg
+      - name: BigQuery dry-run (catches bad SQL + estimates bytes scanned)
+        run: dataform run --dry-run --vars=env=stg
+
+  tf-plan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_CI_SA_PLAN }}
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=platform/terraform init -backend-config=env/stg.backend
+      - run: terraform -chdir=platform/terraform plan -var-file=env/stg.tfvars -no-color

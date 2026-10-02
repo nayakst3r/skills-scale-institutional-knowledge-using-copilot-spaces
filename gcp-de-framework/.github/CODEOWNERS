@@ -1,0 +1,25 @@
+# Last matching rule wins. Owners are auto-requested and their approval is required.
+
+# Default: platform owns anything unassigned
+*                               @org/de-platform
+
+# Domains
+/domains/sales/                 @org/de-sales
+/domains/finance/               @org/de-finance
+/domains/customer/              @org/de-customer
+
+# Contracts are a public API: domain owner AND platform must approve
+/domains/sales/contracts/       @org/de-sales @org/de-platform
+/domains/finance/contracts/     @org/de-finance @org/de-platform
+/domains/customer/contracts/    @org/de-customer @org/de-platform
+
+# Shared code, infra, guardrails
+/libs/                          @org/de-platform
+/platform/                      @org/de-platform
+/tools/                         @org/de-platform
+/.github/                       @org/de-platform
+
+# Architecture and AI context: Architecture Guild
+/ARCHITECTURE.md                @org/de-architecture-guild
+/AGENTS.md                      @org/de-architecture-guild
+/docs/adr/                      @org/de-architecture-guild
