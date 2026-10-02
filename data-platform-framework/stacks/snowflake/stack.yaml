@@ -1,0 +1,9 @@
+stack: snowflake
+display_name: Snowflake (+ Airflow)
+adapter: dbt-snowflake
+environment_boundary: one Snowflake database per environment (DE_DEV, DE_STG, DE_PROD)
+ci_variables: [SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PRIVATE_KEY (secret), DE_DATABASE]
+forbidden_literals:
+  - { pattern: '(?i)\bde_(dev|stg|prod)\b', message: "hard-coded environment database; use ref()/source()" }
+  - { pattern: '(?i)[\w-]+\.snowflakecomputing\.com', message: "hard-coded Snowflake account URL" }
+  - { pattern: '(?i)@[a-z_]+\.[a-z_]+\.[a-z_]+', message: "hard-coded stage; use a source or a dbt var" }

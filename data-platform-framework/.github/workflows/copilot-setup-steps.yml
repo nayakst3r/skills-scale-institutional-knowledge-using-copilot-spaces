@@ -1,0 +1,21 @@
+# Prepares the environment the GitHub Copilot coding agent works in when an issue is assigned to Copilot.
+# The job name must be exactly `copilot-setup-steps`.
+name: copilot-setup-steps
+on:
+  workflow_dispatch:
+  push:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+  pull_request:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt && if [ -f requirements-stack.txt ]; then pip install -r requirements-stack.txt; fi
+      - run: make check && make local-build   # the agent starts from a known-green baseline

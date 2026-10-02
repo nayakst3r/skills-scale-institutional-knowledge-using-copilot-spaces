@@ -1,0 +1,56 @@
+name: cd
+on:
+  push:
+    branches: [main]          # every merge -> stg
+    tags: ["v*"]              # release tag -> prod (GitHub Environment approval)
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy mid-flight
+
+jobs:
+  deploy:
+    if: vars.AZURE_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+    env:
+      DBT_TARGET: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+      DE_FABRIC_SQL_ENDPOINT: ${{ vars.DE_FABRIC_SQL_ENDPOINT }}   # set per GitHub Environment (one workspace per env)
+      FABRIC_USE_OIDC: "true"
+      FABRIC_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      FABRIC_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Infrastructure (workspace, warehouse, roles)
+        run: |
+          terraform -chdir=platform/terraform init -backend-config="storage_account_name=${{ vars.DE_TF_STATE_ACCOUNT }}" -backend-config="container_name=tfstate" -backend-config="key=data-platform-$DBT_TARGET.tfstate" -backend-config="use_oidc=true"
+          terraform -chdir=platform/terraform apply -auto-approve -var="env=$DBT_TARGET" -var="capacity_id=${{ vars.DE_FABRIC_CAPACITY_ID }}" -var="engineers_group_id=${{ vars.DE_ENGINEERS_GROUP_ID }}"
+      - name: Microsoft ODBC Driver 18 (needed by dbt-fabric)
+        run: |
+          curl -sSL -O "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+          sudo dpkg -i packages-microsoft-prod.deb && sudo apt-get update -q && sudo ACCEPT_EULA=Y apt-get install -y -q msodbcsql18
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: Build and test all models (then grant gold readers, see macros/grants.sql)
+        run: |
+          dbt build --exclude resource_type:seed --vars "{gold_readers: '$DE_GOLD_READERS'}"
+        env:
+          DE_GOLD_READERS: ${{ vars.DE_GOLD_READERS }}
+      # Orchestration: the Fabric Apache Airflow job Git-syncs DAGs from this repo's main branch (stg) and
+      # release tags (prod), so there is no publish step. If you use Data Factory pipelines instead, deploy
+      # them here with the fabric-cicd library.

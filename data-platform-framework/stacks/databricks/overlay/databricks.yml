@@ -1,0 +1,46 @@
+# Databricks Asset Bundle: deploys every domain's Lakeflow Job. Validate with `databricks bundle validate -t stg`.
+bundle:
+  name: data_platform
+
+include:
+  - domains/*/orchestration/*.job.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for this environment
+  warehouse_id:
+    description: SQL warehouse that runs dbt
+    lookup:
+      warehouse: de-sql-warehouse
+  alert_email:
+    default: de-alerts@example.com
+
+targets:
+  dev:
+    mode: development       # jobs are prefixed with your name and paused
+    default: true
+    variables: { catalog: dev }
+  stg:
+    variables: { catalog: stg }
+  prod:
+    mode: production
+    variables: { catalog: prod }
+
+resources:
+  jobs:
+    platform_build:           # CD runs this after deploy: build + test every model in the target catalog
+      name: platform_build
+      tasks:
+        - task_key: dbt_build_all
+          environment_key: dbt
+          dbt_task:
+            project_directory: .
+            commands: ["dbt deps", "dbt build --exclude resource_type:seed"]
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: default_schema
+      environments:
+        - environment_key: dbt
+          spec:
+            client: "2"
+            dependencies: ["dbt-databricks>=1.10,<2.0"]

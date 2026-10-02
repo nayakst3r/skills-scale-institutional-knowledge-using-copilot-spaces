@@ -1,0 +1,19 @@
+[project]
+name = "gcp-de-platform"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["demo", "target"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  # the formatter owns line length
+
+[tool.pytest.ini_options]
+testpaths = ["tools/tests"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["de_common"]

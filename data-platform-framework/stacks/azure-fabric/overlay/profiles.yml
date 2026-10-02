@@ -1,0 +1,24 @@
+data_platform:
+  target: "{{ env_var('DBT_TARGET', 'local') }}"
+  outputs:
+    local:   # laptop: DuckDB + sample_data, no cloud needed
+      type: duckdb
+      path: target/local.duckdb
+      threads: 4
+    dev: &fabric
+      type: fabric
+      driver: ODBC Driver 18 for SQL Server
+      server: "{{ env_var('DE_FABRIC_SQL_ENDPOINT', 'set-DE_FABRIC_SQL_ENDPOINT') }}"
+      port: 1433
+      database: "{{ env_var('DE_FABRIC_WAREHOUSE', 'de_warehouse') }}"
+      schema: default_schema  # unused: macros/naming.sql sets every schema
+      # CLI = az login (people) or azure/login OIDC (GitHub Actions).
+      # ServicePrincipal = Fabric Airflow job, with AZURE_* values injected from Key Vault.
+      authentication: "{{ env_var('DE_FABRIC_AUTH', 'CLI') }}"
+      tenant_id: "{{ env_var('AZURE_TENANT_ID', '') }}"
+      client_id: "{{ env_var('AZURE_CLIENT_ID', '') }}"
+      client_secret: "{{ env_var('AZURE_CLIENT_SECRET', '') }}"
+      threads: 8
+    ci: *fabric
+    stg: *fabric
+    prod: *fabric

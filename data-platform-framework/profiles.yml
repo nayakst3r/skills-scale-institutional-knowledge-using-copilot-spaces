@@ -1,0 +1,8 @@
+# Base template: local only. `scripts/use-stack.sh <stack>` replaces this with local + cloud targets.
+data_platform:
+  target: "{{ env_var('DBT_TARGET', 'local') }}"
+  outputs:
+    local:   # runs everything on your laptop with DuckDB: no cloud account needed
+      type: duckdb
+      path: target/local.duckdb
+      threads: 4

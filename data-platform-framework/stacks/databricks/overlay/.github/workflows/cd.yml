@@ -1,0 +1,36 @@
+name: cd
+on:
+  push:
+    branches: [main]          # every merge -> stg
+    tags: ["v*"]              # release tag -> prod (GitHub Environment approval)
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy mid-flight
+
+jobs:
+  deploy:
+    if: vars.DATABRICKS_HOST != ''
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+    env:
+      TARGET: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}            # per GitHub Environment
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}  # deploy service principal
+      DATABRICKS_AUTH_TYPE: github-oidc                       # workload identity federation, no secrets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+      - uses: hashicorp/setup-terraform@v3
+      - name: Infrastructure (schemas + gold-only grants)
+        run: |
+          terraform -chdir=platform/terraform init -backend-config="bucket=${{ vars.DE_TF_STATE_BUCKET }}" -backend-config="key=data-platform-$TARGET.tfstate" -backend-config="region=${{ vars.DE_TF_STATE_REGION }}"
+          terraform -chdir=platform/terraform apply -auto-approve -var="catalog=$TARGET" -var="gold_readers_group=${{ vars.DE_GOLD_READERS }}"
+      - name: Deploy every domain's Lakeflow Job
+        run: databricks bundle deploy -t "$TARGET"
+      - name: Build and test all models in the target catalog
+        run: databricks bundle run platform_build -t "$TARGET"

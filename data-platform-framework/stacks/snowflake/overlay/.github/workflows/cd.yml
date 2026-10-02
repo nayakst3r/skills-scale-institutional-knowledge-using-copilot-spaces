@@ -1,0 +1,43 @@
+name: cd
+on:
+  push:
+    branches: [main]          # every merge -> stg
+    tags: ["v*"]              # release tag -> prod (GitHub Environment approval)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy mid-flight
+
+jobs:
+  deploy:
+    if: vars.SNOWFLAKE_ACCOUNT != ''
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+    env:
+      DBT_TARGET: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+      SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ vars.SNOWFLAKE_USER }}
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}   # environment secret, one per environment
+      DE_DATABASE: ${{ vars.DE_DATABASE }}                          # DE_STG / DE_PROD
+      # Terraform provider auth
+      SNOWFLAKE_ORGANIZATION_NAME: ${{ vars.SNOWFLAKE_ORGANIZATION_NAME }}
+      SNOWFLAKE_ACCOUNT_NAME: ${{ vars.SNOWFLAKE_ACCOUNT_NAME }}
+      SNOWFLAKE_AUTHENTICATOR: SNOWFLAKE_JWT
+      SNOWFLAKE_ROLE: DE_DEPLOYER
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Infrastructure (database, schemas, gold-only grants)
+        run: |
+          terraform -chdir=platform/terraform init -backend-config="bucket=${{ vars.DE_TF_STATE_BUCKET }}" -backend-config="key=data-platform-$DBT_TARGET.tfstate" -backend-config="region=${{ vars.DE_TF_STATE_REGION }}"
+          terraform -chdir=platform/terraform apply -auto-approve -var="database=$DE_DATABASE" -var="gold_reader_role=${{ vars.DE_GOLD_READER_ROLE }}"
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: Build and test all models
+        run: dbt build --exclude resource_type:seed
+      # Publish DAGs + libs/de_common to your Airflow deployment, for example:
+      #   Astronomer: astro deploy --dags     MWAA: aws s3 sync     Composer: gcloud storage rsync

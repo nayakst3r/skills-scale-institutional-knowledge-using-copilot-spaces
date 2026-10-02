@@ -1,0 +1,71 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 2590f5e..dbdb72a 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -25,8 +25,9 @@ No stack selected yet. Run `./scripts/use-stack.sh <gcp|aws|azure-fabric|databri
+ 6. **Write portable SQL**: use `cast()`, `{{ dbt.type_numeric() }}`, `{{ dbt.dateadd() }}`, `nullif()`. No `QUALIFY`, `SAFE_DIVIDE`, `::` casts, or double-quoted strings. Partitioning goes through `**physical_layout(...)` in `config()`.
+ 7. **No hard-coded environments**: no project/catalog/database names, bucket paths, account IDs, or workspace IDs in code.
+ 8. **Orchestration only orchestrates**: no SQL or pandas in `orchestration/`.
+-9. **Breaking schema changes** (drop, rename, type change, nullable → required) need a new `<table>_v<N+1>` contract and model, never an in-place change.
+-10. **Never edit `platform/`, `libs/`, `macros/`, or `tools/` as a side effect of a feature.** Open a separate PR.
++9. **Incremental models declare a `unique_key`** so re-runs and backfills MERGE instead of appending.
++10. **Breaking schema changes** (drop, rename, type change, nullable → required) need a new `<table>_v<N+1>` contract and model, never an in-place change.
++11. **Never edit `platform/`, `libs/`, `macros/`, or `tools/` as a side effect of a feature.** Open a separate PR.
+ 
+ ## How to work
+ - Keep changes small: one PR = one concern, ideally < 400 changed lines.
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+index 8dfd55c..2f2d790 100644
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -14,7 +14,7 @@ back to review checklists.
+ | P4 | **Contract-first.** Every model has a versioned YAML contract (logical schema, owner, SLA, PII). | Schema is the API between teams, and it's portable across stacks. | `check_principles.py` (`contract-exists`, `contract-valid`) |
+ | P5 | **Backward-compatible evolution.** Additive changes only within a major version; breaking ⇒ new `_vN` model + deprecation window. | Never break consumers on merge. | `check_principles.py --compat-base` (`contract-compat`) in CI |
+ | P6 | **Environment-agnostic code.** No hard-coded projects, catalogs, databases, buckets, accounts, or workspace IDs. Read tables only through `ref()` / `source()`. | Same code runs in local, dev sandbox, ci, stg, and prod. | `check_principles.py` (`no-hardcoded-env` with the stack's patterns, `ref-or-source`) |
+-| P7 | **Idempotent, re-runnable pipelines.** Incremental models MERGE on a key; no blind appends. | Safe retries and backfills. | Review checklist (see demo step 6 for turning it into a check) |
++| P7 | **Idempotent, re-runnable pipelines.** Incremental models MERGE on a key; no blind appends. | Safe retries and backfills. | `check_principles.py` (`idempotent-incremental`: incremental models need a `unique_key`); review checklist for the rest |
+ | P8 | **Orchestration ≠ transformation.** Orchestration files (Airflow DAGs, Databricks jobs) only schedule dbt; they hold no SQL or data logic. | Logic stays testable, portable, and in one place. | `check_principles.py` (`orchestration-only`) |
+ | P9 | **Everything as code, deployed by CI only.** Terraform for infra; no console changes in stg/prod; CI logs in with OIDC, never stored keys. | Reproducibility, audit trail. | Rulesets + environments; humans read-only in stg/prod |
+ | P10 | **Quality gates in the pipeline.** dbt data tests (not_null, unique, …) on every silver/gold model. | Bad data fails loudly before consumers see it. | `check_principles.py` (`data-tests`) + `dbt build` runs them |
+diff --git a/tools/check_principles.py b/tools/check_principles.py
+index cf04b31..198eb3a 100644
+--- a/tools/check_principles.py
++++ b/tools/check_principles.py
+@@ -136,7 +136,8 @@ def check_pii_tagged(root: Path) -> list[Violation]:
+ 
+ 
+ def check_models(root: Path) -> list[Violation]:
+-    """P2 naming, P3 cross-domain reads, P4 contract exists, P6 ref/source only, P10 tests, P12 no SELECT *."""
++    """P2 naming, P3 cross-domain reads, P4 contract exists, P6 ref/source only, P7 idempotent incrementals,
++    P10 tests, P12 no SELECT *."""
+     v = []
+     contracts = {(c.get("domain"), c.get("layer"), c.get("name")) for c in load_contracts(root).values()}
+     tested = {d: tested_models(d) for d in domains(root)}
+@@ -155,6 +156,11 @@ def check_models(root: Path) -> list[Violation]:
+             v.append(
+                 Violation("data-tests", r, f"silver/gold models need dbt data tests in domains/{d.name}/models/*.yml")
+             )
++        cfg = config_call(raw)
++        if re.search(r"materialized\s*=\s*['\"]incremental['\"]", cfg) and not re.search(r"\bunique_key\s*=", cfg):
++            v.append(
++                Violation("idempotent-incremental", r, "incremental models need a unique_key so re-runs MERGE (P7)")
++            )
+         if re.search(r"\b(schema|alias)\s*=", config_call(raw)):
+             v.append(Violation("model-naming", r, "don't set schema/alias in config(); macros/naming.sql derives them"))
+ 
+diff --git a/tools/tests/test_check_principles.py b/tools/tests/test_check_principles.py
+index b30b61b..99895b5 100644
+--- a/tools/tests/test_check_principles.py
++++ b/tools/tests/test_check_principles.py
+@@ -131,6 +131,11 @@ def test_key_file_committed(repo):
+     assert "no-secrets" in rules(repo)
+ 
+ 
++def test_incremental_without_unique_key(repo):
++    edit(repo, SILVER, "unique_key='order_id', ", "")
++    assert "idempotent-incremental" in rules(repo)
++
++
+ OLD = {
+     "name": "orders",
+     "version": "1.0.0",

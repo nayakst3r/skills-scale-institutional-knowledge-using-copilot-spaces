@@ -1,0 +1,48 @@
+name: cd
+on:
+  push:
+    branches: [main]          # every merge -> stg
+    tags: ["v*"]              # release tag -> prod (GitHub Environment approval)
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy mid-flight
+
+jobs:
+  deploy:
+    if: vars.GCP_WIF_PROVIDER != ''
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+    env:
+      DBT_TARGET: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+      DE_GCP_PROJECT: ${{ vars.DE_GCP_PROJECT }}    # set per GitHub Environment (de-stg / de-prod)
+      IMAGE: ${{ vars.DE_DBT_IMAGE }}:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: hashicorp/setup-terraform@v3
+      - name: Infrastructure
+        run: |
+          terraform -chdir=platform/terraform init -backend-config="bucket=${{ vars.DE_TF_STATE_BUCKET }}"
+          terraform -chdir=platform/terraform apply -auto-approve -var="project_id=$DE_GCP_PROJECT" -var="env=$DBT_TARGET" -var="gold_readers_group=${{ vars.DE_GOLD_READERS }}"
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: Build and test all models
+        run: dbt build --exclude resource_type:seed
+      - name: Publish the dbt image used by Cloud Run jobs
+        run: gcloud builds submit --tag "$IMAGE" --file platform/dbt-runner/Dockerfile . && gcloud run jobs update dbt-runner --image "$IMAGE" --region "${{ vars.DE_GCP_REGION }}"
+      - name: Publish DAGs to Cloud Composer
+        run: |
+          gcloud storage rsync --recursive libs/de_common "gs://${{ vars.DE_COMPOSER_BUCKET }}/dags/de_common"
+          for d in domains/*/orchestration; do
+            gcloud storage rsync --recursive --delete-unmatched-destination-objects "$d" "gs://${{ vars.DE_COMPOSER_BUCKET }}/dags/$(basename "$(dirname "$d")")"
+          done

@@ -1,0 +1,40 @@
+name: stack-validate
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+  id-token: write   # OIDC login to Entra ID
+
+jobs:
+  stack-validate:
+    runs-on: ubuntu-latest
+    env:
+      DBT_TARGET: ci
+      DE_FABRIC_SQL_ENDPOINT: ${{ vars.DE_FABRIC_SQL_ENDPOINT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Microsoft ODBC Driver 18 (needed by dbt-fabric)
+        run: |
+          curl -sSL -O "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+          sudo dpkg -i packages-microsoft-prod.deb && sudo apt-get update -q && sudo ACCEPT_EULA=Y apt-get install -y -q msodbcsql18
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: "dbt parse (offline: SQL, refs, sources, tests)"
+        run: dbt parse
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=platform/terraform init -backend=false && terraform -chdir=platform/terraform validate
+      # Below runs only once Azure is connected (repo variables set). A skipped step still lets the job pass.
+      - if: vars.AZURE_CLIENT_ID != ''
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - if: vars.AZURE_CLIENT_ID != ''
+        name: dbt build --empty against Fabric Warehouse (compiles + runs every model with zero rows)
+        run: dbt build --empty --exclude resource_type:seed
+      - if: always() && vars.AZURE_CLIENT_ID != ''
+        run: dbt run-operation drop_ci_schemas

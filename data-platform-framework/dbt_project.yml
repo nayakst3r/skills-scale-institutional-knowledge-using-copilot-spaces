@@ -1,0 +1,30 @@
+# One dbt project for the whole platform, on any of the 5 stacks. Only profiles.yml changes per stack.
+name: data_platform
+version: "1.0.0"
+config-version: 2
+profile: data_platform
+require-dbt-version: [">=1.10.0", "<2.0.0"]
+
+model-paths: ["domains"]          # domains/<domain>/models/*.sql (contracts/ and orchestration/ are in .dbtignore)
+seed-paths: ["sample_data"]       # local-only sample bronze data
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+on-run-end:
+  - "{{ grant_gold_readers() }}"   # no-op except on Fabric (see macros/grants.sql)
+
+models:
+  data_platform:
+    # Schema and table names come from the file name: <domain>_<layer>_<table>.sql
+    # -> <domain>_<layer>.<table> (see macros/naming.sql). Don't set schema/alias in models.
+    +materialized: table
+    +incremental_strategy: "{{ 'delete+insert' if target.type in ('fabric', 'duckdb') else 'merge' }}"
+    +on_schema_change: append_new_columns     # additive contract changes flow; removals are blocked by CI
+    +table_type: iceberg                      # Athena only (ignored elsewhere): Iceberg enables MERGE
+    +file_format: delta                       # Databricks only (ignored elsewhere)
+
+seeds:
+  data_platform:
+    +enabled: "{{ target.name == 'local' }}"  # sample data never goes to a cloud environment

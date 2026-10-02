@@ -1,0 +1,10 @@
+stack: databricks
+display_name: Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP
+adapter: dbt-databricks
+environment_boundary: one Unity Catalog catalog per environment (dev, stg, prod), ideally separate workspaces
+ci_variables: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_HTTP_PATH, DE_CATALOG]
+forbidden_literals:
+  - { pattern: '(abfss|s3a?|gs)://', message: "hard-coded storage path; use Unity Catalog volumes/external locations" }
+  - { pattern: 'dbfs:/', message: "DBFS path; use Unity Catalog" }
+  - { pattern: '\b(dev|stg|prod|main|hive_metastore)\.[a-z]+_(bronze|silver|gold)\b', message: "catalog-qualified table; use ref()/source()" }
+  - { pattern: '[\w-]+\.(cloud\.databricks\.com|azuredatabricks\.net|gcp\.databricks\.com)', message: "hard-coded workspace URL" }

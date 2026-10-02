@@ -1,0 +1,32 @@
+name: stack-validate
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+  id-token: write   # OIDC login to Databricks
+
+jobs:
+  stack-validate:
+    runs-on: ubuntu-latest
+    env:
+      DBT_TARGET: ci
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_AUTH_TYPE: github-oidc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: "dbt parse (offline: SQL, refs, sources, tests)"
+        run: dbt parse
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=platform/terraform init -backend=false && terraform -chdir=platform/terraform validate
+      # Below runs only once Databricks is connected (repo variables set). A skipped step still lets the job pass.
+      - if: vars.DATABRICKS_HOST != ''
+        uses: databricks/setup-cli@main
+      - if: vars.DATABRICKS_HOST != ''
+        name: Validate the Asset Bundle (jobs, paths, variables) against the stg workspace
+        run: databricks bundle validate -t stg

@@ -1,0 +1,37 @@
+name: stack-validate
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+  id-token: write   # OIDC login to AWS
+
+jobs:
+  stack-validate:
+    runs-on: ubuntu-latest
+    env:
+      DBT_TARGET: ci
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DE_LAKE_PATH: ${{ vars.DE_LAKE_PATH }}
+      DE_ATHENA_RESULTS: ${{ vars.DE_ATHENA_RESULTS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: "dbt parse (offline: SQL, refs, sources, tests)"
+        run: dbt parse
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=platform/terraform init -backend=false && terraform -chdir=platform/terraform validate
+      # Below runs only once AWS is connected (repo variables set). A skipped step still lets the job pass.
+      - if: vars.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - if: vars.AWS_ROLE_ARN != ''
+        name: dbt build --empty against Athena (compiles + runs every model with zero rows)
+        run: dbt build --empty --exclude resource_type:seed
+      - if: always() && vars.AWS_ROLE_ARN != ''
+        run: dbt run-operation drop_ci_schemas

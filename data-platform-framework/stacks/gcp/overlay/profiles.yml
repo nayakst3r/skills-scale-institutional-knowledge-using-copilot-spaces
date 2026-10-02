@@ -1,0 +1,19 @@
+data_platform:
+  target: "{{ env_var('DBT_TARGET', 'local') }}"
+  outputs:
+    local:   # laptop: DuckDB + sample_data, no cloud needed
+      type: duckdb
+      path: target/local.duckdb
+      threads: 4
+    dev: &bigquery            # people: gcloud ADC; CI: Workload Identity Federation (also ADC)
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('DE_GCP_PROJECT', 'set-DE_GCP_PROJECT') }}"
+      dataset: default_schema # unused: macros/naming.sql sets every schema
+      location: "{{ env_var('DE_GCP_LOCATION', 'EU') }}"
+      threads: 8
+      job_execution_timeout_seconds: 900
+      maximum_bytes_billed: 100000000000   # 100 GB guardrail per query (P12)
+    ci: *bigquery
+    stg: *bigquery
+    prod: *bigquery

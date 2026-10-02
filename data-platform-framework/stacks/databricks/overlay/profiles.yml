@@ -1,0 +1,24 @@
+data_platform:
+  target: "{{ env_var('DBT_TARGET', 'local') }}"
+  outputs:
+    local:   # laptop: DuckDB + sample_data, no cloud needed
+      type: duckdb
+      path: target/local.duckdb
+      threads: 4
+    dev:     # people: browser login (databricks auth login)
+      type: databricks
+      host: "{{ env_var('DATABRICKS_HOST', 'set-DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH', '/sql/1.0/warehouses/set-me') }}"
+      catalog: dev
+      schema: default_schema  # unused: macros/naming.sql sets every schema
+      auth_type: oauth
+      threads: 8
+    ci:      # offline `dbt parse` in PR checks. Real stg/prod runs happen in Lakeflow Jobs, which
+             # generate their own connection, so there are no stg/prod targets and no stored tokens here.
+      type: databricks
+      host: "{{ env_var('DATABRICKS_HOST', 'set-DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH', '/sql/1.0/warehouses/set-me') }}"
+      catalog: stg
+      schema: default_schema
+      token: parse-only-not-a-secret
+      threads: 8

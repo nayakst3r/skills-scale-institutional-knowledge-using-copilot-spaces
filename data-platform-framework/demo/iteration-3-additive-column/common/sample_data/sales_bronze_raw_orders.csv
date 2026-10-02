@@ -1,0 +1,6 @@
+order_id,customer_id,customer_email,order_ts,amount,currency,channel,ingested_at,region
+o-1,c-1,a@example.com,2026-09-01 10:00:00,120.50,eur,web,2026-09-01 10:05:00,north
+o-2,c-2,b@example.com,2026-09-01 11:30:00,80.00,usd,store,2026-09-01 11:35:00,south
+o-2,c-2,b@example.com,2026-09-01 11:30:00,85.00,usd,store,2026-09-01 12:00:00,south
+o-3,c-1,a@example.com,2026-09-02 09:15:00,42.00,gbp,web,2026-09-02 09:20:00,north
+o-4,c-3,c@example.com,2026-09-02 16:45:00,300.00,eur,app,2026-09-02 16:50:00,west

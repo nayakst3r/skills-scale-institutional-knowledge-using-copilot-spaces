@@ -1,0 +1,20 @@
+# Data contract: the public API of a table. Changes need domain owner + platform review.
+name: orders_v2
+domain: sales
+layer: silver
+version: 2.0.0            # MAJOR: amount renamed to gross_amount
+owner: "@org/de-sales"
+description: One row per order. v2 renames amount to gross_amount; replaces orders (v1).
+partition_by: order_date
+cluster_by: [customer_id]
+sla:
+  freshness_hours: 6
+columns:
+  - { name: order_id,       type: string,    mode: REQUIRED, description: Natural key }
+  - { name: customer_id,    type: string,    mode: REQUIRED }
+  - { name: customer_email, type: string,    mode: NULLABLE, pii: true, policy_tag: pii_email }
+  - { name: order_date,     type: date,      mode: REQUIRED }
+  - { name: gross_amount,   type: decimal,   mode: REQUIRED }
+  - { name: currency,       type: string,    mode: REQUIRED }
+  - { name: channel,        type: string,    mode: NULLABLE, description: Added in 1.1.0 }
+  - { name: region,         type: string,    mode: NULLABLE, description: Added in 1.2.0 }

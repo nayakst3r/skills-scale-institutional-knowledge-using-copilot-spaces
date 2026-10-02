@@ -1,0 +1,9 @@
+stack: aws
+display_name: AWS (S3 + Iceberg + Athena + MWAA)
+adapter: dbt-athena
+environment_boundary: one AWS account per environment (dev, stg, prod)
+ci_variables: [AWS_ROLE_ARN, AWS_REGION, DE_LAKE_PATH, DE_ATHENA_RESULTS, DE_MWAA_BUCKET, DE_DBT_IMAGE]
+forbidden_literals:
+  - { pattern: 's3a?://[\w.-]+', message: "hard-coded S3 path; use de_common.config / dbt vars" }
+  - { pattern: 'arn:aws[\w-]*:', message: "hard-coded ARN" }
+  - { pattern: '\b\d{12}\b', message: "hard-coded AWS account ID" }

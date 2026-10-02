@@ -1,0 +1,16 @@
+name: revenue_daily
+domain: sales
+layer: gold
+version: 1.1.0
+owner: "@org/de-sales"
+description: Daily revenue per currency and channel. Consumed by Finance and Looker.
+partition_by: order_date
+sla:
+  freshness_hours: 8
+columns:
+  - { name: order_date,  type: date,    mode: REQUIRED }
+  - { name: currency,    type: string,  mode: REQUIRED }
+  - { name: channel,     type: string,  mode: NULLABLE }
+  - { name: order_count, type: integer, mode: REQUIRED }
+  - { name: revenue,     type: decimal, mode: REQUIRED }
+  - { name: avg_order_value, type: decimal, mode: NULLABLE, description: Added in 1.1.0 }

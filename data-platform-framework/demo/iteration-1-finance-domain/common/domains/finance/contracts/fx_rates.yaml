@@ -1,0 +1,14 @@
+name: fx_rates
+domain: finance
+layer: silver
+version: 1.0.0
+owner: "@org/de-finance"
+description: Daily FX rates, one row per date and currency pair. Includes identity rates (EUR->EUR = 1).
+partition_by: rate_date
+sla:
+  freshness_hours: 24
+columns:
+  - { name: rate_date,     type: date,    mode: REQUIRED }
+  - { name: from_currency, type: string,  mode: REQUIRED }
+  - { name: to_currency,   type: string,  mode: REQUIRED }
+  - { name: rate,          type: decimal, mode: REQUIRED }

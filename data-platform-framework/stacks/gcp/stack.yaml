@@ -1,0 +1,9 @@
+stack: gcp
+display_name: Google Cloud (BigQuery + Cloud Composer)
+adapter: dbt-bigquery
+environment_boundary: one GCP project per environment (de-dev, de-stg, de-prod)
+ci_variables: [GCP_WIF_PROVIDER, GCP_DEPLOY_SA, DE_GCP_PROJECT, DE_COMPOSER_BUCKET, DE_DBT_IMAGE]
+forbidden_literals:
+  - { pattern: 'gs://[\w.-]+', message: "hard-coded GCS bucket; use de_common.config / dbt vars" }
+  - { pattern: '\b[a-z][a-z0-9-]{4,28}[a-z0-9]\.[a-z]+_(bronze|silver|gold)\.', message: "project-qualified table; use ref()/source()" }
+  - { pattern: '\bde-(dev|stg|prod)\b', message: "hard-coded environment project" }

@@ -1,0 +1,23 @@
+version: 2
+models:
+  - name: sales_silver_orders
+    description: One row per order, deduplicated and typed. Contract - contracts/orders.yaml
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests: [not_null]
+      - name: order_date
+        data_tests: [not_null]
+
+  - name: sales_gold_revenue_daily
+    description: Daily revenue per currency and channel. Public. Contract - contracts/revenue_daily.yaml
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [order_date, currency, channel]
+    columns:
+      - name: order_date
+        data_tests: [not_null]
+      - name: currency
+        data_tests: [not_null]

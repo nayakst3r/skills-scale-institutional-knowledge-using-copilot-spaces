@@ -1,0 +1,33 @@
+name: stack-validate
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  stack-validate:
+    runs-on: ubuntu-latest
+    environment: ci          # holds the SNOWFLAKE_PRIVATE_KEY secret for the CI service user
+    env:
+      DBT_TARGET: ci
+      SNOWFLAKE_ACCOUNT: ${{ vars.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ vars.SNOWFLAKE_USER }}
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      DE_DATABASE: ${{ vars.DE_DATABASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: "dbt parse (offline: SQL, refs, sources, tests)"
+        run: dbt parse
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=platform/terraform init -backend=false && terraform -chdir=platform/terraform validate
+      # Below runs only once Snowflake is connected (repo variables set). A skipped step still lets the job pass.
+      - if: vars.SNOWFLAKE_ACCOUNT != ''
+        name: dbt build --empty against Snowflake (compiles + runs every model with zero rows)
+        run: dbt build --empty --exclude resource_type:seed
+      - if: always() && vars.SNOWFLAKE_ACCOUNT != ''
+        run: dbt run-operation drop_ci_schemas

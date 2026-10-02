@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "local-build: dbt build on DuckDB with sample data",
+      "type": "shell",
+      "command": "make local-build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "check: architecture principles + tests",
+      "type": "shell",
+      "command": "make check",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": {
+        "owner": "principles",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": { "regexp": "^([^:\\s]+):?(\\d+)?: \\[([\\w-]+)\\] (.*)$", "file": 1, "line": 2, "code": 3, "message": 4 }
+      }
+    },
+    {
+      "label": "check: contract compatibility vs main",
+      "type": "shell",
+      "command": "git fetch origin main && python3 tools/check_principles.py . --compat-base origin/main",
+      "problemMatcher": {
+        "owner": "principles",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": { "regexp": "^([^:\\s]+):?(\\d+)?: \\[([\\w-]+)\\] (.*)$", "file": 1, "line": 2, "code": 3, "message": 4 }
+      }
+    }
+  ]
+}

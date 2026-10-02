@@ -1,0 +1,25 @@
+# Lakeflow Job for the finance domain (Asset Bundle resource). Orchestration only: it runs dbt (P8).
+resources:
+  jobs:
+    finance_daily:
+      name: finance_daily
+      tags: { domain: finance }
+      schedule:
+        quartz_cron_expression: "0 0 5 * * ?"  # after sales_daily: reads sales gold
+        timezone_id: UTC
+      email_notifications:
+        on_failure: ["${var.alert_email}"]
+      tasks:
+        - task_key: dbt_build_finance
+          environment_key: dbt
+          dbt_task:
+            project_directory: ../../..
+            commands: ["dbt deps", "dbt build --select tag:finance"]
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: default_schema
+      environments:
+        - environment_key: dbt
+          spec:
+            client: "2"
+            dependencies: ["dbt-databricks>=1.10,<2.0"]

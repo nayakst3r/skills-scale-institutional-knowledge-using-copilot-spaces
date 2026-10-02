@@ -1,0 +1,29 @@
+data_platform:
+  target: "{{ env_var('DBT_TARGET', 'local') }}"
+  outputs:
+    local:   # laptop: DuckDB + sample_data, no cloud needed
+      type: duckdb
+      path: target/local.duckdb
+      threads: 4
+    dev:     # people: SSO in the browser
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'set-SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'set-SNOWFLAKE_USER') }}"
+      authenticator: externalbrowser
+      role: DE_DEVELOPER
+      warehouse: DE_DEV_WH
+      database: "{{ env_var('DE_DATABASE', 'DE_DEV') }}"
+      schema: default_schema  # unused: macros/naming.sql sets every schema
+      threads: 8
+    ci: &service_user         # CI/CD and Airflow: key-pair auth for a service user
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'set-SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'set-SNOWFLAKE_USER') }}"
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY', '') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'DE_DEPLOYER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'DE_CI_WH') }}"
+      database: "{{ env_var('DE_DATABASE', 'DE_STG') }}"
+      schema: default_schema
+      threads: 8
+    stg: *service_user
+    prod: *service_user

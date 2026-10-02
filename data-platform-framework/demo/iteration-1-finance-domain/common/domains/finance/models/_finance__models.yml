@@ -1,0 +1,25 @@
+version: 2
+models:
+  - name: finance_silver_fx_rates
+    description: Daily FX rates. Contract - contracts/fx_rates.yaml
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [rate_date, from_currency, to_currency]
+    columns:
+      - name: rate_date
+        data_tests: [not_null]
+      - name: rate
+        data_tests: [not_null]
+
+  - name: finance_gold_revenue_eur_daily
+    description: Daily revenue in EUR per channel. Public. Contract - contracts/revenue_eur_daily.yaml
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [order_date, channel]
+    columns:
+      - name: order_date
+        data_tests: [not_null]
+      - name: revenue_eur
+        data_tests: [not_null]

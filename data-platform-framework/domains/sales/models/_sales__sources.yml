@@ -1,0 +1,7 @@
+version: 2
+sources:
+  - name: sales_bronze
+    description: Raw sales data as landed by ingestion (immutable).
+    schema: sales_bronze
+    tables:
+      - name: raw_orders

@@ -1,0 +1,51 @@
+name: cd
+on:
+  push:
+    branches: [main]          # every merge -> stg
+    tags: ["v*"]              # release tag -> prod (GitHub Environment approval)
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy mid-flight
+
+jobs:
+  deploy:
+    if: vars.AWS_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+    env:
+      DBT_TARGET: ${{ startsWith(github.ref, 'refs/tags/v') && 'prod' || 'stg' }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DE_LAKE_PATH: ${{ vars.DE_LAKE_PATH }}           # set per GitHub Environment (one account per env)
+      DE_ATHENA_RESULTS: ${{ vars.DE_ATHENA_RESULTS }}
+      IMAGE: ${{ vars.DE_DBT_IMAGE }}:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}    # per environment
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+      - name: Infrastructure
+        run: |
+          terraform -chdir=platform/terraform init -backend-config="bucket=${{ vars.DE_TF_STATE_BUCKET }}" -backend-config="key=data-platform.tfstate" -backend-config="region=$AWS_REGION"
+          terraform -chdir=platform/terraform apply -auto-approve -var="region=$AWS_REGION" -var="env=$DBT_TARGET" -var="lake_bucket=${{ vars.DE_LAKE_BUCKET }}" -var="gold_reader_role_arn=${{ vars.DE_GOLD_READER_ROLE_ARN }}"
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements-stack.txt
+      - name: Build and test all models
+        run: dbt build --exclude resource_type:seed
+      - name: Publish the dbt image used by ECS tasks
+        run: |
+          aws ecr get-login-password | docker login --username AWS --password-stdin "${IMAGE%%/*}"
+          docker build -f platform/dbt-runner/Dockerfile -t "$IMAGE" . && docker push "$IMAGE"
+      - name: Publish DAGs to MWAA
+        run: |
+          aws s3 sync libs/de_common "s3://${{ vars.DE_MWAA_BUCKET }}/dags/de_common" --delete
+          for d in domains/*/orchestration; do
+            aws s3 sync "$d" "s3://${{ vars.DE_MWAA_BUCKET }}/dags/$(basename "$(dirname "$d")")" --delete
+          done

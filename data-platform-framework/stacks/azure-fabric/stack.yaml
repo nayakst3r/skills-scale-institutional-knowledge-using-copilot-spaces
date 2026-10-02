@@ -1,0 +1,11 @@
+stack: azure-fabric
+display_name: Microsoft Fabric / Azure (Fabric Warehouse + OneLake)
+adapter: dbt-fabric
+environment_boundary: one Fabric workspace per environment (de-dev, de-stg, de-prod)
+ci_variables: [AZURE_CLIENT_ID, AZURE_TENANT_ID, DE_FABRIC_SQL_ENDPOINT, DE_FABRIC_CAPACITY_ID]
+forbidden_literals:
+  - { pattern: 'abfss://', message: "hard-coded ADLS/OneLake path; use a shortcut or a dbt var" }
+  - { pattern: '\.(dfs|blob)\.core\.windows\.net', message: "hard-coded Azure storage account" }
+  - { pattern: 'onelake\.(dfs|blob)\.fabric\.microsoft\.com', message: "hard-coded OneLake endpoint" }
+  - { pattern: '\.datawarehouse\.fabric\.microsoft\.com', message: "hard-coded Fabric SQL endpoint" }
+  - { pattern: '\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b', message: "hard-coded workspace/item/tenant ID" }

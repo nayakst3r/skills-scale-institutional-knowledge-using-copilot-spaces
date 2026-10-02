@@ -1,0 +1,7 @@
+version: 2
+sources:
+  - name: finance_bronze
+    description: Raw finance data as landed by ingestion (immutable).
+    schema: finance_bronze
+    tables:
+      - name: raw_fx_rates

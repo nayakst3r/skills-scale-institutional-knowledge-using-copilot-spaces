@@ -1,0 +1,54 @@
+# Stack-neutral PR checks. The stack-specific check (`stack-validate`) lives in stack-validate.yml,
+# installed by scripts/use-stack.sh.
+name: ci
+on:
+  pull_request:
+  merge_group:          # required for GitHub merge queue
+
+permissions:
+  contents: read
+
+jobs:
+  principles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install pyyaml pytest
+      - run: git fetch origin ${{ github.base_ref || 'main' }}
+      - name: Architecture fitness functions
+        run: python tools/check_principles.py .
+      - name: Contract compatibility vs main
+        run: python tools/check_principles.py . --compat-base origin/${{ github.base_ref || 'main' }}
+      - run: pytest tools/tests -q
+
+  local-build:
+    # Builds and tests every model on DuckDB with the sample data: real SQL, no cloud account needed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - run: make local-build
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install ruff
+      - run: ruff check . && ruff format --check .
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive platform/terraform 2>/dev/null || [ ! -d platform/terraform ]
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The gitleaks CLI is free for any account (gitleaks-action needs a license on organization accounts).
+      # Also turn on GitHub secret scanning with push protection, if it's available to you.
+      - run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 dir /repo --verbose
