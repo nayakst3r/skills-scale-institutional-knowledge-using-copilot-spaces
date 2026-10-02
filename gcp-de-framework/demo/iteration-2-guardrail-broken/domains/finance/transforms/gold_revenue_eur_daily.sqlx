@@ -1,0 +1,21 @@
+config {
+  type: "table",
+  schema: "finance_gold",
+  name: "revenue_eur_daily",
+  bigquery: { partitionBy: "order_date" },
+  assertions: { nonNull: ["order_date", "revenue_eur"], uniqueKey: ["order_date", "channel"] }
+}
+
+-- What an assistant typically writes from "join orders to fx rates": it goes
+-- straight to the most detailed table it can find, which is Sales' internal silver layer.
+SELECT
+  o.order_date,
+  o.channel,
+  COUNT(*) AS order_count,
+  SUM(o.amount * fx.rate) AS revenue_eur
+FROM ${ref("sales_silver", "orders")} AS o
+INNER JOIN ${ref("finance_silver", "fx_rates")} AS fx
+  ON fx.rate_date = o.order_date
+  AND fx.from_currency = o.currency
+  AND fx.to_currency = "EUR"
+GROUP BY o.order_date, o.channel

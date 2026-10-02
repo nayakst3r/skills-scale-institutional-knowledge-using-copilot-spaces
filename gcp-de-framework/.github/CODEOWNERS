@@ -18,8 +18,12 @@
 /platform/                      @org/de-platform
 /tools/                         @org/de-platform
 /.github/                       @org/de-platform
+/.vscode/                       @org/de-platform
 
 # Architecture and AI context: Architecture Guild
 /ARCHITECTURE.md                @org/de-architecture-guild
 /AGENTS.md                      @org/de-architecture-guild
 /docs/adr/                      @org/de-architecture-guild
+/.github/instructions/          @org/de-architecture-guild
+/.github/prompts/               @org/de-architecture-guild
+/.github/agents/                @org/de-architecture-guild

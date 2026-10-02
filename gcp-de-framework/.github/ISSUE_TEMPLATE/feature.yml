@@ -1,0 +1,37 @@
+name: Data feature
+description: A new or changed table/pipeline. Small enough for one PR, and ready to assign to a person or to Copilot.
+labels: [feature]
+body:
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options: [sales, finance, customer, platform]
+    validations: { required: true }
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What should exist when this is done? Who consumes it?
+      placeholder: A gold table finance.revenue_eur_daily that Looker reads for the EUR revenue dashboard.
+    validations: { required: true }
+  - type: textarea
+    id: tables
+    attributes:
+      label: Tables and contracts
+      description: New or changed tables, their layer, and the upstream tables they read.
+    validations: { required: true }
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking change to an existing contract?
+      options: ["No: new table or additive column", "Yes: needs a _vN table and a deprecation plan"]
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] Contract(s) added or updated, with a version bump
+        - [ ] Transform has assertions
+        - [ ] `make check` and CI are green

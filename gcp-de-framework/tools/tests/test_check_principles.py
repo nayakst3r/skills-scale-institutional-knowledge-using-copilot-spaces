@@ -64,7 +64,7 @@ def test_sql_in_dag(repo):
 def test_missing_assertions(repo):
     f = repo / "domains/sales/transforms/gold_revenue_daily.sqlx"
     text = f.read_text()
-    f.write_text(text.replace(text[text.index("  assertions"):text.index("}\n\nSELECT")], ""))
+    f.write_text(text.replace(text[text.index("  assertions") : text.index("}\n\nSELECT")], ""))
     assert "assertions" in rules(repo)
 
 
@@ -80,10 +80,14 @@ def test_wrong_schema_name(repo):
     assert "layer-naming" in rules(repo)
 
 
-OLD = {"name": "orders", "version": "1.0.0", "columns": [
-    {"name": "id", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "amount", "type": "NUMERIC", "mode": "NULLABLE"},
-]}
+OLD = {
+    "name": "orders",
+    "version": "1.0.0",
+    "columns": [
+        {"name": "id", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "amount", "type": "NUMERIC", "mode": "NULLABLE"},
+    ],
+}
 
 
 def contract(version, columns):

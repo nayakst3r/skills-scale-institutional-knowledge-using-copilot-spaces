@@ -2,7 +2,11 @@
 
 A reference repo layout and working method for **10 data engineers building one data
 platform on Google Cloud with AI coding assistants**, without breaking what exists and
-without drifting from the architecture.
+without drifting from the architecture. The standard toolset is **VS Code + GitHub Copilot**;
+any other agent works too because the context lives in `AGENTS.md`.
+
+**Presenting this?** Follow [`docs/DEMO_PLAYBOOK.md`](docs/DEMO_PLAYBOOK.md): repo setup, then 6
+feature-build steps, each with a tested fallback (`make demo-step`).
 
 ## The core problem, and the core idea
 
@@ -53,7 +57,18 @@ gcp-de-framework/
 ├── libs/de_common/           # Shared code — owned by platform team, versioned
 ├── platform/terraform/       # All infra. No console clicks.
 ├── tools/check_principles.py # Architecture fitness functions (run locally + CI)
-├── .github/                  # CODEOWNERS, PR template, CI/CD workflows
+├── .github/
+│   ├── copilot-instructions.md   # Copilot entry point → AGENTS.md
+│   ├── instructions/             # Copilot rules auto-applied by file type (SQLX, contracts, DAGs, Terraform)
+│   ├── prompts/                  # Team slash commands: /new-table, /change-contract, /new-adr
+│   ├── agents/                   # Custom agents: DE Planner, DE Architecture Reviewer
+│   ├── workflows/                # ci, cd, copilot-setup-steps (Copilot coding agent)
+│   ├── ISSUE_TEMPLATE/feature.yml  # Feature issues, assignable to a person or Copilot
+│   ├── CODEOWNERS
+│   └── pull_request_template.md
+├── .vscode/                  # Recommended extensions, Copilot settings, `make check` task
+├── scripts/setup-github.sh   # Applies repo settings: squash-only, ruleset, labels, environments
+├── demo/                     # Reference solutions for the demo playbook (delete after the show)
 ├── .pre-commit-config.yaml   # Same checks, run before every commit
 └── Makefile                  # `make check` = what CI runs
 ```
@@ -83,7 +98,8 @@ All assistants read from the same files, so every engineer's AI starts with the 
 
 | Tool | File it reads | Set-up |
 |---|---|---|
-| GitHub Copilot | `.github/copilot-instructions.md` | One line: "Follow `AGENTS.md` and `ARCHITECTURE.md`." Also add the repo + `docs/` to a shared **Copilot Space** for the team. |
+| GitHub Copilot (standard) | `AGENTS.md`, `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md` | Enabled by `.vscode/settings.json`. Prompt files and custom agents in `.github/prompts` and `.github/agents` are shared with everyone who opens the repo. Optionally add the repo + `docs/` to a team **Copilot Space** for chat on github.com. |
+| Copilot coding agent | `AGENTS.md` + `copilot-setup-steps.yml` | Assign an issue to Copilot; its PR goes through the same checks and CODEOWNERS as anyone's. |
 | Gemini Code Assist | `GEMINI.md` / code customization | Point at `AGENTS.md`; enable code customization on the repo. |
 | Claude Code | `CLAUDE.md` | `@AGENTS.md` import. |
 | Any other agent | `AGENTS.md` | Open standard, read natively by most agents. |
@@ -92,9 +108,22 @@ When a decision is made in a meeting or chat, it isn't done until it is an **ADR
 `docs/adr/`** and, if checkable, a **rule in `check_principles.py`**. That's how context
 flows to 10 people's AI sessions without anyone having to "share" it.
 
+## Copilot in the daily workflow
+
+| Moment | What the engineer uses |
+|---|---|
+| Plan a feature | Chat → **DE Planner** agent → *Implement plan* handoff |
+| Build | Agent mode + `/new-table` or `/change-contract`; auto-applied instructions per file type |
+| Check | Task **check: architecture principles + tests** (Copilot runs it too); pre-commit on commit |
+| Commit / PR | ✨ commit message (Conventional Commits); GitHub Pull Requests extension; Copilot code review |
+| Review | Human CODEOWNERS + **DE Architecture Reviewer** agent for what CI can't check |
+| Scale out | Well-scoped issues assigned to the Copilot coding agent |
+| Learn | `/new-adr` → new rule in `AGENTS.md` + new check in `check_principles.py` |
+
 ## Try it
 
 ```bash
 cd gcp-de-framework
-make check     # runs the architecture fitness functions + their tests
+make check                 # architecture checks + their tests + a full replay of the demo steps
+make demo-step             # list the demo steps
 ```

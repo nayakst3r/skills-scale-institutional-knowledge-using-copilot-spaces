@@ -1,0 +1,22 @@
+config {
+  type: "incremental",
+  schema: "finance_silver",
+  name: "fx_rates",
+  uniqueKey: ["rate_date", "from_currency", "to_currency"],
+  bigquery: { partitionBy: "rate_date" },
+  assertions: {
+    nonNull: ["rate_date", "from_currency", "to_currency", "rate"],
+    uniqueKey: ["rate_date", "from_currency", "to_currency"],
+    rowConditions: ["rate > 0"]
+  }
+}
+
+SELECT
+  DATE(published_at) AS rate_date,
+  UPPER(from_currency) AS from_currency,
+  UPPER(to_currency) AS to_currency,
+  CAST(rate AS NUMERIC) AS rate
+FROM ${ref("finance_bronze", "raw_fx_rates")}
+WHERE TRUE
+  ${when(incremental(), `AND DATE(published_at) >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)`)}
+QUALIFY ROW_NUMBER() OVER (PARTITION BY DATE(published_at), from_currency, to_currency ORDER BY published_at DESC) = 1

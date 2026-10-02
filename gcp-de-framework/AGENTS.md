@@ -30,6 +30,12 @@ say so instead of working around them.
 - If you make an architectural decision, draft an ADR in `docs/adr/` using `0000-template.md`.
 - Commit messages follow Conventional Commits: `feat(sales): add daily revenue gold table`.
 
+## Team commands (VS Code Copilot Chat)
+- `/new-table`: add a table (contract + transform + assertions)
+- `/change-contract`: change a schema safely (additive, or a versioned breaking change)
+- `/new-adr`: record a decision and propose its enforcement
+- Agents: **DE Planner** (plan before code), **DE Architecture Reviewer** (review what CI can't check)
+
 ## Where to find things
 - Principles and their rationale: `ARCHITECTURE.md`
 - Past decisions: `docs/adr/`

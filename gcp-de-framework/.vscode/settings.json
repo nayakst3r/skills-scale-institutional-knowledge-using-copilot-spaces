@@ -1,0 +1,18 @@
+{
+  // Copilot: load the team's shared context automatically
+  "chat.useAgentsMdFile": true,
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "chat.includeApplyingInstructions": true,
+  "chat.includeReferencedInstructions": true,
+
+  // Formatting is owned by tools, not by people or AI
+  "editor.formatOnSave": true,
+  "[python]": { "editor.defaultFormatter": "charliermarsh.ruff" },
+  "[terraform]": { "editor.defaultFormatter": "hashicorp.terraform" },
+  "files.associations": { "*.sqlx": "sql" },
+  "yaml.schemas": { "./tools/contract.schema.json": "domains/*/contracts/*.yaml" },
+
+  // Conventional Commits in the Source Control box
+  "git.inputValidation": true,
+  "git.inputValidationSubjectLength": 72
+}

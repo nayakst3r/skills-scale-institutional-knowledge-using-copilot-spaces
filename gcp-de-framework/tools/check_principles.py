@@ -38,6 +38,7 @@ class Violation:
 
 # ---------- helpers ----------
 
+
 def domains(root: Path) -> list[Path]:
     base = root / "domains"
     return sorted(p for p in base.iterdir() if p.is_dir()) if base.exists() else []
@@ -70,10 +71,11 @@ def sqlx_config(text: str) -> dict[str, str]:
 
 def sql_body(text: str) -> str:
     block = re.search(r"config\s*\{.*?\n\}", text, re.S)
-    return text[block.end():] if block else text
+    return text[block.end() :] if block else text
 
 
 # ---------- checks ----------
+
 
 def check_contracts_valid(root: Path) -> list[Violation]:
     """P4: every contract is complete, well-formed and filed under the right domain."""
@@ -101,7 +103,11 @@ def check_pii_tagged(root: Path) -> list[Violation]:
     for path, c in load_contracts(root).items():
         for col in c.get("columns") or []:
             if col.get("pii") and not col.get("policy_tag"):
-                v.append(Violation("pii-policy-tag", rel(root, path), f"column '{col.get('name')}' is pii but has no policy_tag"))
+                v.append(
+                    Violation(
+                        "pii-policy-tag", rel(root, path), f"column '{col.get('name')}' is pii but has no policy_tag"
+                    )
+                )
     return v
 
 
@@ -117,11 +123,20 @@ def check_transforms(root: Path) -> list[Violation]:
             schema = cfg.get("schema", "")
             m = re.fullmatch(r"(\w+)_(bronze|silver|gold)", schema)
             if not m or m.group(1) != d.name:
-                v.append(Violation("layer-naming", r, f"schema must be '{d.name}_<bronze|silver|gold>', got '{schema}'"))
+                v.append(
+                    Violation("layer-naming", r, f"schema must be '{d.name}_<bronze|silver|gold>', got '{schema}'")
+                )
                 continue
             layer = m.group(2)
-            if cfg.get("type") in ("table", "incremental", "view") and (d.name, layer, cfg.get("name")) not in contracts:
-                v.append(Violation("contract-exists", r, f"no contract for {schema}.{cfg.get('name')} in {d.name}/contracts/"))
+            if (
+                cfg.get("type") in ("table", "incremental", "view")
+                and (d.name, layer, cfg.get("name")) not in contracts
+            ):
+                v.append(
+                    Violation(
+                        "contract-exists", r, f"no contract for {schema}.{cfg.get('name')} in {d.name}/contracts/"
+                    )
+                )
             if layer in ("silver", "gold") and not cfg["has_assertions"]:
                 v.append(Violation("assertions", r, "silver/gold tables need Dataform assertions"))
             body = sql_body(text)
@@ -129,7 +144,11 @@ def check_transforms(root: Path) -> list[Violation]:
                 v.append(Violation("no-select-star", r, "SELECT * not allowed in silver/gold; list columns"))
             for other, other_layer in ref_re.findall(body):
                 if other != d.name and other_layer != "gold":
-                    v.append(Violation("cross-domain-read", r, f"reads {other}_{other_layer}; only other domains' gold is allowed"))
+                    v.append(
+                        Violation(
+                            "cross-domain-read", r, f"reads {other}_{other_layer}; only other domains' gold is allowed"
+                        )
+                    )
     return v
 
 
@@ -156,7 +175,10 @@ def check_no_hardcoded_env(root: Path) -> list[Violation]:
 
 DAG_FORBIDDEN = [
     (re.compile(r"^\s*(import|from)\s+pandas\b", re.M), "pandas in a DAG; move logic to Dataform/Dataflow/libs"),
-    (re.compile(r"\b(SELECT|INSERT\s+INTO|MERGE\s+INTO|DELETE\s+FROM|CREATE\s+TABLE)\b"), "SQL in a DAG; move it to a .sqlx transform"),
+    (
+        re.compile(r"\b(SELECT|INSERT\s+INTO|MERGE\s+INTO|DELETE\s+FROM|CREATE\s+TABLE)\b"),
+        "SQL in a DAG; move it to a .sqlx transform",
+    ),
 ]
 
 
@@ -193,6 +215,7 @@ CHECKS = [
 
 # ---------- contract compatibility (P5) ----------
 
+
 def _ver(s: str) -> tuple[int, ...]:
     return tuple(int(x) for x in str(s).split("."))
 
@@ -215,8 +238,13 @@ def compat_violations(path: str, old: dict, new: dict) -> list[Violation]:
     breaking += [f"new column '{n}' is REQUIRED (must be NULLABLE)" for n in added_required]
 
     for b in breaking:
-        v.append(Violation("contract-compat", path,
-                           f"breaking change: {b}. Create {new.get('name')}_v{_ver(old['version'])[0] + 1}.yaml instead (P5)"))
+        v.append(
+            Violation(
+                "contract-compat",
+                path,
+                f"breaking change: {b}. Create {new.get('name')}_v{_ver(old['version'])[0] + 1}.yaml instead (P5)",
+            )
+        )
     if old_cols != new_cols and _ver(new.get("version", "0.0.0")) <= _ver(old.get("version", "0.0.0")):
         v.append(Violation("contract-compat", path, "columns changed but version was not bumped"))
     return v
@@ -226,8 +254,12 @@ def check_compat_against(root: Path, base: str) -> list[Violation]:
     v = []
     for path, new in load_contracts(root).items():
         r = rel(root, path)
-        repo_path = subprocess.run(["git", "-C", str(root), "ls-files", "--full-name", r],
-                                   capture_output=True, text=True).stdout.strip() or r
+        repo_path = (
+            subprocess.run(
+                ["git", "-C", str(root), "ls-files", "--full-name", r], capture_output=True, text=True
+            ).stdout.strip()
+            or r
+        )
         res = subprocess.run(["git", "-C", str(root), "show", f"{base}:{repo_path}"], capture_output=True, text=True)
         if res.returncode != 0:
             continue  # new contract: nothing to be compatible with
