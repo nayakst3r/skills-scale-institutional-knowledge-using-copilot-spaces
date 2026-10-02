@@ -1,0 +1,676 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="fonts/fonts.css">
+<script src="timeline.js"></script>
+<style>
+  :root {
+    --bg: #000000; --panel: #0D0F0D; --panel2: #090A09; --line: #2A2E2A; --ink: #FFFFFF; --muted: #A7A8AA; --dim: #5E6160;
+    --green: #86BC25; --dkgreen: #26890D; --red: #DA291C; --amber: #ED8B00; --teal: #0D8390;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  body { font-family: 'Open Sans', sans-serif; color: var(--ink); position: relative; }
+  .abs { position: absolute; }
+  .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .cap { position: absolute; left: 120px; font: 800 64px/1.12 'Open Sans'; letter-spacing: -1.6px; }
+  .sub { position: absolute; font: 400 36px/1.3 'Open Sans'; color: var(--muted); }
+  .g { color: var(--green); } .r { color: var(--red); } .m { color: var(--muted); } .a { color: var(--amber); }
+
+  /* brand */
+  .wm { font-family: 'Open Sans'; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+  .wm .dot { display: inline-block; width: 0.2em; height: 0.2em; border-radius: 50%; background: var(--green); margin-left: 0.05em; }
+  #brand { right: 80px; top: 44px; font-size: 34px; }
+  #tracker { left: 120px; top: 1000px; width: 1680px; display: flex; gap: 14px; }
+  .trk { flex: 1; font: 600 20px 'Open Sans'; color: var(--dim); padding-top: 12px; border-top: 4px solid #1F221F; white-space: nowrap; }
+  .trk b { font-weight: 800; margin-right: 8px; }
+  .trk.on { color: var(--ink); border-top-color: var(--green); }
+  .trk.done { color: var(--muted); border-top-color: var(--dkgreen); }
+
+  /* panels */
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .chrome { height: 48px; display: flex; align-items: center; gap: 9px; padding: 0 20px; border-bottom: 1px solid var(--line); background: var(--panel2);
+    font: 500 19px 'JetBrains Mono', monospace; color: var(--muted); }
+  .chrome i { width: 12px; height: 12px; border-radius: 50%; background: #2B2F2B; display: inline-block; }
+  .chrome span { margin-left: 12px; }
+  .term { padding: 22px 28px; font: 400 22px/38px 'JetBrains Mono', monospace; white-space: pre; }
+  .wrap { white-space: pre-wrap; }
+  .ps { color: var(--green); }
+  .caret { display: inline-block; width: 11px; height: 24px; background: var(--green); vertical-align: -5px; margin-left: 2px; }
+
+  /* step 1 */
+  #s1rail { left: 120px; top: 150px; width: 520px; }
+  .steplabel { font: 800 24px 'Open Sans'; color: var(--green); letter-spacing: 0.08em; text-transform: uppercase; }
+  .steptitle { font: 800 54px/1.12 'Open Sans'; letter-spacing: -1.4px; margin-top: 14px; }
+  .subs { margin-top: 44px; display: flex; flex-direction: column; gap: 14px; }
+  .si { display: flex; align-items: center; gap: 18px; padding: 16px 18px; border-radius: 12px; font: 600 28px/1.25 'Open Sans'; color: var(--dim);
+    border: 1px solid transparent; }
+  .si .n { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #2E322E; display: flex; align-items: center; justify-content: center;
+    font: 700 20px 'Open Sans'; flex: none; }
+  .si.on { color: var(--ink); background: #111511; border-color: #2F3A22; }
+  .si.on .n { border-color: var(--green); color: var(--green); }
+  .si.done { color: var(--muted); }
+  .si.done .n { border-color: var(--dkgreen); background: var(--dkgreen); color: #000; }
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; }
+  .chip { font: 500 22px 'JetBrains Mono', monospace; padding: 9px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); white-space: nowrap; }
+  .chip.gr { border-color: rgba(134,188,37,0.55); color: var(--green); }
+  table.arch { border-collapse: collapse; width: 100%; font: 400 24px/1.35 'Open Sans'; }
+  table.arch th { text-align: left; font: 700 20px 'Open Sans'; color: var(--muted); padding: 14px 24px; border-bottom: 1px solid var(--line); }
+  table.arch td { padding: 18px 24px; border-bottom: 1px solid #1C1F1C; vertical-align: top; }
+  table.arch td.p { font: 800 24px 'Open Sans'; color: var(--green); width: 70px; }
+  table.arch td.e { font: 500 22px 'JetBrains Mono', monospace; color: var(--ink); width: 420px; }
+
+  /* step 2 lanes */
+  #mainTrack { left: 160px; top: 296px; width: 1600px; height: 4px; background: #2B2F2B; border-radius: 2px; }
+  #mainLbl { left: 160px; top: 252px; font: 700 22px 'JetBrains Mono', monospace; color: var(--muted); }
+  .mdot { top: 286px; width: 24px; height: 24px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 6px rgba(134,188,37,0.18); }
+  .mlbl { top: 236px; font: 600 20px 'Open Sans'; color: var(--green); white-space: nowrap; transform: translateX(-50%); }
+  .lane { left: 160px; width: 1600px; height: 166px; }
+  .lane .bn { left: 30px; top: 20px; font: 600 26px 'JetBrains Mono', monospace; }
+  .lane .who { top: 20px; font: 600 20px 'Open Sans'; color: var(--muted); padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; }
+  .pills { left: 30px; top: 70px; display: flex; gap: 12px; }
+  .pill { width: 212px; height: 42px; border-radius: 10px; border: 1px solid var(--line); background: #0A0C0A; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+    font: 500 18px 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
+  .pill .ic { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #3A3F3A; flex: none; display: flex; align-items: center; justify-content: center; }
+  .pill.run .ic { border-color: var(--amber); }
+  .pill.pass { border-color: rgba(134,188,37,0.45); color: var(--ink); }
+  .pill.pass .ic { border: none; background: var(--green); }
+  .pill.fail { border-color: rgba(218,41,28,0.6); color: var(--ink); }
+  .pill.fail .ic { border: none; background: var(--red); }
+  .lane .st { left: 1172px; top: 76px; width: 410px; font: 700 21px 'Open Sans'; white-space: nowrap; }
+  .lane .co { left: 30px; top: 124px; font: 400 20px 'JetBrains Mono', monospace; white-space: nowrap; }
+
+  /* step 3 cards */
+  .gcard { top: 270px; width: 820px; height: 690px; padding: 34px 38px; }
+  .gt { font: 800 36px 'Open Sans'; letter-spacing: -0.6px; }
+  .gs { font: 400 24px 'Open Sans'; color: var(--muted); margin-top: 6px; }
+  .code { margin-top: 26px; background: #070807; border: 1px solid #1E221E; border-radius: 10px; padding: 18px 22px; font: 400 21px/36px 'JetBrains Mono', monospace; white-space: pre; min-height: 116px; }
+  .res { margin-top: 18px; font: 400 21px/34px 'JetBrains Mono', monospace; white-space: pre; min-height: 76px; }
+  .fix { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .fixl { font: 800 22px 'Open Sans'; color: var(--green); letter-spacing: 0.06em; text-transform: uppercase; }
+  .del { background: rgba(218,41,28,0.14); color: #FF8A80; display: inline-block; width: 100%; }
+  .add { background: rgba(134,188,37,0.14); color: #C5E58A; display: inline-block; width: 100%; }
+
+  /* step 4 pipeline */
+  .node { top: 470px; width: 80px; height: 80px; border-radius: 50%; border: 3px solid #2E322E; background: var(--panel); display: flex; align-items: center; justify-content: center; }
+  .node.on { border-color: var(--green); background: #0F160A; }
+  .node.wait { border-color: var(--amber); }
+  .nlab { top: 580px; width: 300px; text-align: center; font: 700 30px 'Open Sans'; }
+  .ndet { top: 628px; width: 300px; text-align: center; font: 400 21px/1.4 'JetBrains Mono', monospace; color: var(--muted); }
+  .edge { top: 508px; height: 4px; background: #2B2F2B; border-radius: 2px; }
+  .edgefill { top: 508px; height: 4px; background: var(--green); border-radius: 2px; }
+
+  /* step 5 */
+  .lnode { top: 330px; width: 360px; height: 150px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); padding: 22px 24px; }
+  .lnode .k { font: 700 18px 'Open Sans'; color: var(--green); letter-spacing: 0.08em; text-transform: uppercase; }
+  .lnode .v { font: 700 27px/1.25 'Open Sans'; margin-top: 8px; }
+  .lnode.on { border-color: rgba(134,188,37,0.6); }
+  .arrow { top: 396px; width: 40px; height: 18px; }
+
+  /* close */
+  #c1 { left: 0; top: 230px; width: 1920px; text-align: center; font: 800 96px/1.05 'Open Sans'; letter-spacing: -2.5px; }
+  #c2 { left: 0; top: 520px; width: 1920px; text-align: center; font: 600 46px 'Open Sans'; color: var(--muted); }
+  #cstacks { left: 0; top: 380px; width: 1920px; display: flex; justify-content: center; gap: 16px; }
+  #cbrand { left: 0; top: 700px; width: 1920px; text-align: center; }
+  #cbrand .wm { font-size: 96px; }
+  #cprac { left: 0; top: 838px; width: 1920px; text-align: center; font: 600 30px 'Open Sans'; color: var(--muted); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<!-- ============ PROBLEM ============ -->
+<div id="sc-problem" class="scene">
+  <svg id="branches" class="abs" width="1920" height="1080" style="left:0;top:0"></svg>
+  <div id="pcapA" class="cap" style="top:110px">Every engineer now codes with an AI assistant.</div>
+  <div id="pcapB" class="cap" style="top:110px">Speed goes up. <span class="r">So does drift.</span></div>
+  <div id="pq" class="abs" style="left:0;top:400px;width:1920px;text-align:center;font:800 76px/1.15 'Open Sans';letter-spacing:-2px">So how do you keep the intent<br>and the architecture intact at scale?</div>
+</div>
+
+<!-- ============ TITLE ============ -->
+<div id="sc-title" class="scene">
+  <div id="tbrand" class="abs wm" style="left:120px;top:150px;font-size:60px">Deloitte<span class="dot"></span></div>
+  <div id="tkick" class="abs" style="left:120px;top:250px;font:700 26px 'Open Sans';color:var(--green);letter-spacing:0.12em;text-transform:uppercase">AI-assisted engineering at scale · Best practice</div>
+  <div id="ttitle" class="abs" style="left:120px;top:330px;font:800 128px/1.04 'Open Sans';letter-spacing:-4px">Context as code.<br><span class="g">Principles as CI.</span></div>
+  <div id="tsub" class="sub" style="left:120px;top:640px;font-size:40px">A best-practice operating model for AI-assisted data engineering</div>
+  <div id="tprac" class="abs" style="left:120px;top:900px;font:600 26px 'Open Sans';color:var(--muted)">Data &amp; AI practice · Sample framework: data-platform-framework</div>
+</div>
+
+<!-- ============ STEP 1: SETUP ============ -->
+<div id="sc-setup" class="scene">
+  <div id="s1rail" class="abs">
+    <div class="steplabel">Step 1</div>
+    <div class="steptitle">The first engineer<br>sets the rules</div>
+    <div class="subs" id="subs">
+      <div class="si"><span class="n">a</span>Start from the framework, pick the stack</div>
+      <div class="si"><span class="n">b</span>Write the context every AI reads</div>
+      <div class="si"><span class="n">c</span>Turn principles into checks</div>
+      <div class="si"><span class="n">d</span>Protect main: rules, owners, gates</div>
+    </div>
+  </div>
+  <!-- 1a -->
+  <div id="p1a" class="abs panel" style="left:660px;top:190px;width:1160px;height:370px">
+    <div class="chrome"><i></i><i></i><i></i><span>bash · data-platform</span></div>
+    <div class="term" id="t1a"></div>
+  </div>
+  <div id="p1a2" class="abs" style="left:660px;top:600px;width:1160px">
+    <div class="m" style="font:600 22px 'Open Sans';margin-bottom:14px">The same method on any of five stacks</div>
+    <div class="chips"><span class="chip">azure-fabric</span><span class="chip gr">databricks</span><span class="chip">snowflake</span><span class="chip">gcp</span><span class="chip">aws</span></div>
+  </div>
+  <!-- 1b -->
+  <div id="p1b" class="abs panel" style="left:660px;top:190px;width:1160px;height:560px">
+    <div class="chrome"><i></i><i></i><i></i><span>AGENTS.md</span></div>
+    <div class="term wrap" id="t1b" style="font-size:21px;line-height:35px"></div>
+  </div>
+  <div id="p1b2" class="abs" style="left:660px;top:790px;width:1160px">
+    <div class="m" style="font:600 22px 'Open Sans';margin-bottom:14px">Read first by every assistant, through its own entry file</div>
+    <div class="chips"><span class="chip">GitHub Copilot</span><span class="chip">Copilot coding agent</span><span class="chip">Claude Code</span><span class="chip">Gemini Code Assist</span></div>
+  </div>
+  <!-- 1c -->
+  <div id="p1c" class="abs panel" style="left:660px;top:190px;width:1160px;height:420px">
+    <div class="chrome"><i></i><i></i><i></i><span>ARCHITECTURE.md · Enforced by</span></div>
+    <table class="arch">
+      <tr><th></th><th>Principle</th><th>Enforced by (tools/check_principles.py)</th></tr>
+      <tr id="r1"><td class="p">P3</td><td>Gold is the only public interface.</td><td class="e">cross-domain-read</td></tr>
+      <tr id="r2"><td class="p">P5</td><td>Backward-compatible evolution.</td><td class="e">contract-compat</td></tr>
+      <tr id="r3"><td class="p">P6</td><td>Environment-agnostic code.</td><td class="e">no-hardcoded-env, ref-or-source</td></tr>
+    </table>
+  </div>
+  <div id="p1c2" class="abs panel" style="left:660px;top:640px;width:1160px;height:170px">
+    <div class="chrome"><i></i><i></i><i></i><span>bash · runs in pre-commit and on every PR</span></div>
+    <div class="term" id="t1c"></div>
+  </div>
+  <!-- 1d -->
+  <div id="p1d" class="abs panel" style="left:660px;top:190px;width:560px;height:620px">
+    <div class="chrome"><i></i><i></i><i></i><span>ruleset: main-protection</span></div>
+    <div class="term" id="t1d" style="font-size:20px;line-height:36px"></div>
+  </div>
+  <div id="p1d2" class="abs panel" style="left:1250px;top:190px;width:570px;height:620px">
+    <div class="chrome"><i></i><i></i><i></i><span>.github/CODEOWNERS</span></div>
+    <div class="term" id="t1d2" style="font-size:19px;line-height:36px"></div>
+  </div>
+</div>
+
+<!-- ============ STEP 2: PARALLEL ============ -->
+<div id="sc-parallel" class="scene">
+  <div id="pcap" class="cap" style="top:110px;font-size:56px">Every change, human or AI, passes the same gates.</div>
+  <div id="pdone" class="cap g" style="top:110px;font-size:56px">3 features merged. main stays green.</div>
+  <div id="mainTrack" class="abs"></div>
+  <div id="mainLbl" class="abs">main</div>
+  <div id="mdots"></div>
+  <div id="lanes"></div>
+</div>
+
+<!-- ============ STEP 3: GATES ============ -->
+<div id="sc-gates" class="scene">
+  <div id="gcap" class="cap" style="top:120px">The gates protect intent, not just syntax.</div>
+  <div id="gL" class="abs panel gcard" style="left:120px">
+    <div class="gt">Off-architecture read</div>
+    <div class="gs">P3 · Gold is the only public interface.</div>
+    <div class="code" id="gLc"></div>
+    <div class="res" id="gLr"></div>
+    <div class="fix" id="gLf">
+      <div class="fixl">The fix</div>
+      <div class="code" style="min-height:0;margin-top:12px" id="gLfc"></div>
+    </div>
+  </div>
+  <div id="gR" class="abs panel gcard" style="left:980px">
+    <div class="gt">Breaking schema change</div>
+    <div class="gs">P5 · Backward-compatible evolution.</div>
+    <div class="code" id="gRc"></div>
+    <div class="res" id="gRr"></div>
+    <div class="fix" id="gRf">
+      <div class="fixl">The fix</div>
+      <div class="code" style="min-height:0;margin-top:12px" id="gRfc"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STEP 4: PROMOTE ============ -->
+<div id="sc-promote" class="scene">
+  <div id="prcap" class="cap" style="top:120px">Only CI deploys. <span class="g">People approve.</span></div>
+  <div id="prsub" class="sub" style="left:120px;top:210px">CI signs in with OIDC: no stored cloud keys.</div>
+  <div id="pipe"></div>
+</div>
+
+<!-- ============ STEP 5: LEARN ============ -->
+<div id="sc-learn" class="scene">
+  <div id="lcap" class="cap" style="top:120px">One PR updates every engineer's AI.</div>
+  <div id="lnodes"></div>
+  <div id="ldiff" class="abs panel" style="left:120px;top:560px;width:1680px;height:330px">
+    <div class="chrome"><i></i><i></i><i></i><span>the PR: one change, three places</span></div>
+    <div class="term wrap" id="tld" style="font-size:21px;line-height:36px"></div>
+  </div>
+</div>
+
+<!-- ============ CLOSE ============ -->
+<div id="sc-close" class="scene">
+  <div id="c1" class="abs">Any team size. Any of five stacks.</div>
+  <div id="cstacks" class="abs"><span class="chip">Microsoft Fabric / Azure</span><span class="chip">Databricks</span><span class="chip">Snowflake</span><span class="chip">Google Cloud</span><span class="chip">AWS</span></div>
+  <div id="c2" class="abs">The repo holds the intent. <span class="g">CI protects it.</span></div>
+  <div id="cbrand" class="abs"><span class="wm">Deloitte<span class="dot"></span></span></div>
+  <div id="cprac" class="abs">Data &amp; AI practice</div>
+</div>
+
+<!-- persistent -->
+<div id="brand" class="abs wm">Deloitte<span class="dot"></span></div>
+<div id="tracker" class="abs">
+  <div class="trk"><b>1</b>Set up the repo</div>
+  <div class="trk"><b>2</b>Build in parallel</div>
+  <div class="trk"><b>3</b>Gates catch drift</div>
+  <div class="trk"><b>4</b>CI/CD promotes</div>
+  <div class="trk"><b>5</b>The practice learns</div>
+</div>
+
+<script>
+const S = TL.scenes;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eio = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const typed = (s, t, start, cps) => s.slice(0, Math.max(0, Math.floor((t - start) * cps)));
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const caret = (t) => (Math.floor(t * 6) % 2 === 0 ? '<span class="caret"></span>' : '');
+function env(t, a, b, d = 0.4, d2 = 0.35) { return Math.min(eo(seg(t, a, a + d)), 1 - eio(seg(t, b - d2, b))); }
+function show(el, o, dy = 0, sc = 1) {
+  el.style.opacity = o; el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+  el.style.transform = `translateY(${dy}px) scale(${sc})`;
+}
+const rise = (t, a, d = 0.4, px = 24) => (1 - eo(seg(t, a, a + d))) * px;
+const svgCheck = '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 7.3l2.6 2.6L11 4.4" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const svgX = '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const bigCheck = '<svg width="36" height="36" viewBox="0 0 36 36"><path d="M9 18.5l6 6L27 12" fill="none" stroke="#86BC25" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// ===================== PROBLEM: branches =====================
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const NS = 'http://www.w3.org/2000/svg';
+const svg = $('branches');
+const mainY = 650;
+const mainLine = document.createElementNS(NS, 'line');
+Object.entries({ x1: 100, y1: mainY, x2: 1820, y2: mainY, stroke: '#3A3F3A', 'stroke-width': 4, 'stroke-linecap': 'round' }).forEach(([k, v]) => mainLine.setAttribute(k, v));
+svg.appendChild(mainLine);
+const mainTxt = document.createElementNS(NS, 'text');
+Object.entries({ x: 100, y: mainY - 18, fill: '#A7A8AA', 'font-family': 'JetBrains Mono', 'font-size': 22, 'font-weight': 600 }).forEach(([k, v]) => mainTxt.setAttribute(k, v));
+mainTxt.textContent = 'main'; svg.appendChild(mainTxt);
+const bnames = ['feat/sales-12', 'feat/finance-4', 'fix/customer-9', 'feat/sales-15', 'feat/finance-7', 'chore/platform-3', 'feat/customer-2',
+  'feat/sales-21', 'fix/finance-11', 'feat/customer-6'];
+const redSpec = { 2: [4.0, 'cross-domain-read', "reads another domain's silver"], 5: [4.6, 'contract-compat', 'renames a column in place'],
+  7: [5.2, 'no-hardcoded-env', 'hard-codes a prod path'] };
+const branches = bnames.map((name, i) => {
+  const x = 180 + i * 160;
+  const up = i % 2 === 0;
+  const h = [180, 240, 210][i % 3];
+  const ex = x + 70, ey = mainY + (up ? -h : h);
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', `M ${x} ${mainY} C ${x} ${mainY + (up ? -h * 0.6 : h * 0.6)}, ${ex - 10} ${ey}, ${ex} ${ey}`);
+  path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#86BC25'); path.setAttribute('stroke-width', 3); path.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(path);
+  const len = path.getTotalLength();
+  path.style.strokeDasharray = len;
+  const g = document.createElementNS(NS, 'g');
+  const w = name.length * 13.2 + 70;
+  const ly = up ? ey - 40 : ey + 6;
+  g.innerHTML = `<rect x="${ex - w / 2}" y="${ly}" rx="17" width="${w}" height="34" fill="#0D0F0D" stroke="#2A2E2A"/>
+    <text x="${ex - w / 2 + 14}" y="${ly + 23}" fill="#fff" font-family="JetBrains Mono" font-size="20">${name}</text>
+    <rect x="${ex + w / 2 - 46}" y="${ly + 7}" rx="5" width="34" height="20" fill="#86BC25"/>
+    <text x="${ex + w / 2 - 41}" y="${ly + 22}" fill="#000" font-family="Open Sans" font-weight="800" font-size="14">AI</text>`;
+  svg.appendChild(g);
+  let tag = null;
+  if (redSpec[i]) {
+    tag = document.createElementNS(NS, 'g');
+    const [_, rule, desc] = redSpec[i];
+    const ty = up ? ly - 66 : ly + 44;
+    const tw = Math.max(rule.length * 13.2, desc.length * 10.6) + 32;
+    tag.innerHTML = `<rect x="${ex - tw / 2}" y="${ty}" rx="8" width="${tw}" height="58" fill="#1A0705" stroke="#DA291C"/>
+      <text x="${ex - tw / 2 + 16}" y="${ty + 24}" fill="#FF6B5E" font-family="JetBrains Mono" font-size="20" font-weight="600">${rule}</text>
+      <text x="${ex - tw / 2 + 16}" y="${ty + 47}" fill="#E6E6E6" font-family="Open Sans" font-size="17">${desc}</text>`;
+    svg.appendChild(tag);
+  }
+  return { path, len, g, tag, start: 0.2 + i * 0.2, red: redSpec[i] ? redSpec[i][0] : null };
+});
+
+function renderProblem(t) {
+  const [a, b] = S.problem;
+  const dim = 1 - 0.9 * eo(seg(t, 6.0, 6.6));
+  branches.forEach((br) => {
+    const p = eo(seg(t, br.start, br.start + 0.7));
+    br.path.style.strokeDashoffset = br.len * (1 - p);
+    const isRed = br.red !== null && t >= br.red;
+    br.path.setAttribute('stroke', isRed ? '#DA291C' : '#86BC25');
+    br.path.style.opacity = dim;
+    br.g.style.opacity = eo(seg(t, br.start + 0.5, br.start + 0.8)) * dim;
+    if (br.tag) br.tag.style.opacity = eo(seg(t, br.red, br.red + 0.25)) * dim;
+  });
+  mainLine.style.opacity = dim; mainTxt.style.opacity = dim;
+  show($('pcapA'), env(t, 0.4, 3.45, 0.4, 0.3), rise(t, 0.4));
+  show($('pcapB'), env(t, 3.5, 6.1, 0.35, 0.35), rise(t, 3.5));
+  show($('pq'), env(t, 6.2, b, 0.45, 0.35), rise(t, 6.2, 0.45, 30));
+}
+
+// ===================== STEP 2: lanes =====================
+const L = TL.lanes;
+const laneDefs = [
+  { k: 'B', bn: 'feat/sales-7-add-region', who: 'Sales team · Copilot', y: 360, approve: 'Approved by sales owners', merged: 'sales: region' },
+  { k: 'A', bn: 'feat/finance-1-revenue-eur', who: 'Finance team · Copilot agent mode', y: 546, approve: 'Approved: finance + platform', merged: 'finance: revenue in EUR' },
+  { k: 'C', bn: 'feat/sales-9-avg-order-value', who: 'Copilot coding agent · from an issue', y: 732, approve: 'Approved: sales + platform', merged: 'sales: avg order value' },
+];
+const checkNames = ['principles', 'local-build', 'stack-validate', 'lint', 'secrets'];
+const lanes = laneDefs.map((d) => {
+  const el = document.createElement('div'); el.className = 'abs panel lane'; el.style.top = d.y + 'px';
+  el.innerHTML = `<div class="abs bn">${d.bn}</div><div class="abs who" style="left:${30 + d.bn.length * 15.6 + 24}px">${d.who}</div>
+    <div class="abs pills">${checkNames.map((c) => `<div class="pill"><span class="ic"></span>${c}</div>`).join('')}</div>
+    <div class="abs st"></div><div class="abs co"></div>`;
+  $('lanes').appendChild(el);
+  const dot = document.createElement('div'); dot.className = 'abs mdot'; $('mdots').appendChild(dot);
+  const lbl = document.createElement('div'); lbl.className = 'abs mlbl'; lbl.textContent = d.merged; $('mdots').appendChild(lbl);
+  return { d, el, pills: [...el.querySelectorAll('.pill')], st: el.querySelector('.st'), co: el.querySelector('.co'), dot, lbl };
+});
+const mergeOrder = ['B', 'A', 'C'];
+function pillState(t, start, i, failIdx) {
+  if (start === undefined || t < start) return 'idle';
+  const res = start + TL.checkLead + TL.checkStep * i;
+  if (t < res) return 'run';
+  return i === failIdx ? 'fail' : 'pass';
+}
+function setPill(p, s, t) {
+  p.className = 'pill' + (s === 'idle' ? '' : ' ' + s);
+  const ic = p.querySelector('.ic');
+  ic.innerHTML = s === 'pass' ? svgCheck : s === 'fail' ? svgX : '';
+  ic.style.opacity = s === 'run' ? 0.45 + 0.55 * Math.abs(Math.sin(t * 9)) : 1;
+}
+function renderParallel(t) {
+  const [a, b] = S.parallel;
+  const allMerged = t >= L.C.merge + 0.3;
+  show($('pcap'), Math.min(env(t, a + 0.1, b, 0.4, 0.35), 1 - eo(seg(t, L.C.merge + 0.3, L.C.merge + 0.6))), rise(t, a + 0.1));
+  show($('pdone'), env(t, L.C.merge + 0.6, b, 0.4, 0.35), rise(t, L.C.merge + 0.6));
+  const sceneO = env(t, a, b, 0.35, 0.35);
+  show($('mainTrack'), sceneO); show($('mainLbl'), sceneO);
+  lanes.forEach((ln) => {
+    const T = L[ln.d.k];
+    const merged = t >= T.merge;
+    const mo = 1 - 0.55 * eo(seg(t, T.merge, T.merge + 0.4));
+    show(ln.el, Math.min(eo(seg(t, T.appear, T.appear + 0.35)), mo), rise(t, T.appear, 0.35, 20));
+    let st = '', stc = 'm', co = '', coc = 'm';
+    if (ln.d.k === 'A') {
+      const first = t < T.fix;
+      ln.pills.forEach((p, i) => setPill(p, first ? pillState(t, T.checks, i, 0) : pillState(t, T.recheck, i, -1), t));
+      const failed = t >= T.checks + TL.checkLead && first;
+      const passAll = t >= T.recheck + TL.checkLead + TL.checkStep * 4;
+      if (t < T.commit) st = 'Pull request opened';
+      else if (t < T.checks) st = 'Pushed with Copilot agent mode';
+      else if (first && !failed) st = 'Checks running';
+      else if (failed) { st = 'Blocked: principles failed'; stc = 'r'; co = "[cross-domain-read] reads sales_silver; only other domains' gold is allowed"; coc = 'r'; }
+      else if (!passAll) { st = 'Fix pushed, checks running'; co = 'fix: read sales_gold_revenue_daily instead of sales_silver_orders'; coc = 'g'; }
+      else if (t < T.approve) { st = 'All checks passed'; stc = 'g'; co = 'fix: read sales_gold_revenue_daily instead of sales_silver_orders'; coc = 'g'; }
+      else if (t < T.queue) { st = ln.d.approve; stc = 'g'; }
+      else if (t < T.merge) { st = 'In merge queue'; stc = 'a'; }
+      else { st = 'Merged'; stc = 'g'; }
+    } else if (ln.d.k === 'B') {
+      ln.pills.forEach((p, i) => setPill(p, pillState(t, T.checks, i, -1), t));
+      const passAll = t >= T.checks + TL.checkLead + TL.checkStep * 4;
+      if (t < T.commit) st = 'Pull request opened';
+      else if (!passAll) st = 'Checks running';
+      else if (t < T.approve) { st = 'All checks passed'; stc = 'g'; }
+      else if (t < T.queue) { st = ln.d.approve; stc = 'g'; }
+      else if (t < T.merge) { st = 'In merge queue'; stc = 'a'; }
+      else { st = 'Merged'; stc = 'g'; }
+      if (t >= T.checks) co = 'contract orders.yaml 1.1.0 → 1.2.0 (additive)';
+    } else {
+      const first = t < T.fix;
+      ln.pills.forEach((p, i) => setPill(p, first ? pillState(t, T.checks, i, -1) : pillState(t, T.recheck, i, -1), t));
+      const pass1 = t >= T.checks + TL.checkLead + TL.checkStep * 4;
+      const pass2 = t >= T.recheck + TL.checkLead + TL.checkStep * 4;
+      if (t < T.commit) st = 'Issue assigned to Copilot';
+      else if (t < T.checks) st = 'Copilot opened a pull request';
+      else if (first && !pass1) st = 'Checks running';
+      else if (first && t < T.comment) { st = 'All checks passed'; stc = 'g'; }
+      else if (first) { st = 'Changes requested in review'; stc = 'a'; co = 'review: @copilot also describe avg_order_value in the contract'; }
+      else if (!pass2) { st = 'Copilot pushed an update'; co = 'review: @copilot also describe avg_order_value in the contract'; }
+      else if (t < T.approve) { st = 'All checks passed'; stc = 'g'; }
+      else if (t < T.queue) { st = ln.d.approve; stc = 'g'; }
+      else if (t < T.merge) { st = 'In merge queue'; stc = 'a'; }
+      else { st = 'Merged'; stc = 'g'; }
+    }
+    ln.st.className = 'abs st ' + stc; ln.st.textContent = st;
+    ln.co.className = 'abs co ' + coc; ln.co.textContent = co;
+    // merge marker on main
+    const idx = mergeOrder.indexOf(ln.d.k);
+    const mx = 160 + 420 + idx * 440;
+    ln.dot.style.left = (mx - 12) + 'px'; ln.lbl.style.left = mx + 'px';
+    const mo2 = Math.min(eo(seg(t, T.merge, T.merge + 0.3)), sceneO);
+    show(ln.dot, mo2, 0, 0.6 + 0.4 * eo(seg(t, T.merge, T.merge + 0.3))); show(ln.lbl, mo2);
+  });
+}
+
+// ===================== STEP 4: pipeline =====================
+const stages = [
+  ['PR checks', '5 required\nchecks'], ['Merge queue', 're-tests on\nlatest main'], ['main', 'always\ndeployable'],
+  ['Staging', 'Terraform +\ndbt build, tests'], ['Release tag', 'vYYYY.MM.DD.N'], ['Production', 'release-captain\napproval'],
+];
+const px0 = 170, pdx = 316;
+const pipeNodes = stages.map(([lab, det], i) => {
+  const cx = px0 + i * pdx + 40;
+  if (i > 0) {
+    const e = document.createElement('div'); e.className = 'abs edge'; e.style.left = (cx - pdx + 40) + 'px'; e.style.width = (pdx - 80) + 'px'; $('pipe').appendChild(e);
+    const f = document.createElement('div'); f.className = 'abs edgefill'; f.style.left = (cx - pdx + 40) + 'px'; $('pipe').appendChild(f);
+  }
+  const n = document.createElement('div'); n.className = 'abs node'; n.style.left = (cx - 40) + 'px'; $('pipe').appendChild(n);
+  const l = document.createElement('div'); l.className = 'abs nlab'; l.style.left = (cx - 150) + 'px'; l.textContent = lab; $('pipe').appendChild(l);
+  const d = document.createElement('div'); d.className = 'abs ndet'; d.style.left = (cx - 150) + 'px'; d.innerHTML = esc(det).replace('\n', '<br>'); $('pipe').appendChild(d);
+  return { n, l, d };
+});
+const fills = [...$('pipe').querySelectorAll('.edgefill')];
+function renderPromote(t) {
+  const [a, b] = S.promote;
+  show($('prcap'), env(t, a + 0.2, b, 0.4, 0.35), rise(t, a + 0.2));
+  show($('prsub'), env(t, a + 0.9, b, 0.4, 0.35), rise(t, a + 0.9));
+  const so = env(t, a, b, 0.35, 0.35);
+  pipeNodes.forEach((p, i) => {
+    const on = TL.promoteStages[i];
+    const lit = t >= on;
+    const waiting = i === 5 && t >= on - 1.0 && t < on;
+    p.n.className = 'abs node' + (lit ? ' on' : waiting ? ' wait' : '');
+    p.n.innerHTML = lit ? bigCheck : waiting ? '<span style="font:800 26px Open Sans;color:#ED8B00">!</span>' : '';
+    show(p.n, so, 0, lit ? 1 + 0.08 * (1 - eo(seg(t, on, on + 0.3))) : 1);
+    show(p.l, so); show(p.d, so);
+    p.l.style.color = lit ? '#FFFFFF' : '#5E6160';
+    if (waiting) { p.d.innerHTML = '<span style="color:#ED8B00">waiting for<br>approval</span>'; } else { p.d.innerHTML = esc(stages[i][1]).replace('\n', '<br>'); }
+  });
+  fills.forEach((f, i) => {
+    const s0 = TL.promoteStages[i], s1 = TL.promoteStages[i + 1];
+    const fillEnd = i === 4 ? s0 + 0.6 : s1;
+    f.style.width = ((pdx - 80) * eo(seg(t, s0, fillEnd))) + 'px';
+    show(f, so);
+  });
+}
+
+// ===================== STEP 5: learn =====================
+const lsteps = [['Retro', "“A re-run duplicated rows.”"], ['Decision', 'ADR: incremental models need a unique key'], ['One PR', 'AGENTS.md rule + new CI check'], ['Next PR, everywhere', "Every engineer's AI applies it"]];
+const lx = [120, 560, 1000, 1440];
+const lnodes = lsteps.map(([k, v], i) => {
+  const n = document.createElement('div'); n.className = 'abs lnode'; n.style.left = lx[i] + 'px';
+  n.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`; $('lnodes').appendChild(n);
+  let ar = null;
+  if (i > 0) { ar = document.createElement('div'); ar.className = 'abs arrow'; ar.style.left = (lx[i] - 60) + 'px';
+    ar.innerHTML = '<svg width="40" height="18" viewBox="0 0 40 18"><path d="M2 9h32M27 2l7 7-7 7" fill="none" stroke="#86BC25" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; $('lnodes').appendChild(ar); }
+  return { n, ar };
+});
+const learnTimes = [66.7, 67.5, 68.3, 69.3];
+function renderLearn(t) {
+  const [a, b] = S.learn;
+  show($('lcap'), env(t, a + 0.2, b, 0.4, 0.35), rise(t, a + 0.2));
+  lnodes.forEach((ln, i) => {
+    const o = env(t, learnTimes[i], b, 0.35, 0.35);
+    show(ln.n, o, rise(t, learnTimes[i], 0.35, 18));
+    ln.n.className = 'abs lnode' + (t >= learnTimes[i] + 0.2 ? ' on' : '');
+    if (ln.ar) show(ln.ar, o);
+  });
+  show($('ldiff'), env(t, 68.3, b, 0.4, 0.35), rise(t, 68.3));
+  const D = [];
+  D.push('<span class="m">AGENTS.md</span>');
+  if (t >= 68.6) D.push('<span class="add">+ 9. **Incremental models declare a `unique_key`** so re-runs and backfills MERGE instead of appending.</span>');
+  if (t >= 68.9) D.push('<span class="m">tools/check_principles.py</span>');
+  if (t >= 69.1) D.push('<span class="add">+     v.append(Violation("idempotent-incremental", r, "incremental models need a unique_key so re-runs MERGE (P7)"))</span>');
+  if (t >= 69.4) D.push('<span class="m">ARCHITECTURE.md</span>  <span class="g">P7 · Enforced by check_principles.py (idempotent-incremental)</span>');
+  $('tld').innerHTML = D.join('\n');
+}
+
+// ===================== RENDER =====================
+const scenes = ['problem', 'title', 'setup', 'parallel', 'gates', 'promote', 'learn', 'close'];
+window.render = function (t) {
+  scenes.forEach((s) => {
+    const [a, b] = S[s];
+    const o = env(t, a, b, 0.01, 0.01);
+    $('sc-' + s).style.display = (t >= a - 0.01 && t < b + 0.01) ? 'block' : 'none';
+  });
+
+  // ---- problem
+  if (t < S.problem[1]) renderProblem(t);
+
+  // ---- title
+  {
+    const [a, b] = S.title;
+    show($('tbrand'), env(t, a + 0.1, b, 0.4, 0.35), rise(t, a + 0.1));
+    show($('tkick'), env(t, a + 0.25, b, 0.4, 0.35), rise(t, a + 0.25));
+    show($('ttitle'), env(t, a + 0.35, b, 0.45, 0.35), rise(t, a + 0.35, 0.45, 34));
+    show($('tsub'), env(t, a + 0.85, b, 0.4, 0.35), rise(t, a + 0.85));
+    show($('tprac'), env(t, a + 1.1, b, 0.4, 0.35));
+  }
+
+  // ---- setup
+  {
+    const [a, b] = S.setup;
+    show($('s1rail'), env(t, a + 0.1, b, 0.4, 0.35), rise(t, a + 0.1));
+    const subs = [...$('subs').children];
+    const cur = TL.setupSub.findIndex(([x, y]) => t >= x && t < y);
+    subs.forEach((el, i) => {
+      el.className = 'si' + (i === cur ? ' on' : (cur > i || t >= b) ? ' done' : '');
+      el.querySelector('.n').innerHTML = (cur > i || t >= b) ? svgCheck : 'abcd'[i];
+    });
+    const [s1, s2, s3, s4] = TL.setupSub;
+    // 1a
+    const o1 = env(t, s1[0] + 0.3, s1[1], 0.4, 0.3);
+    show($('p1a'), o1, rise(t, s1[0] + 0.3)); show($('p1a2'), env(t, s1[0] + 1.0, s1[1], 0.4, 0.3), rise(t, s1[0] + 1.0));
+    {
+      const c1 = './scripts/use-stack.sh databricks', c2 = 'make check && make local-build';
+      const T = [];
+      const y1 = typed(c1, t, 14.5, 70);
+      T.push(`<span class="ps">$ </span>${esc(y1)}${y1.length < c1.length ? caret(t) : ''}`);
+      if (t >= 15.25) T.push(`<span class="g">Stack set to:</span> Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP`);
+      if (t >= 15.8) { const y2 = typed(c2, t, 15.9, 60); T.push(''); T.push(`<span class="ps">$ </span>${esc(y2)}${y2.length < c2.length ? caret(t) : ''}`); }
+      if (t >= 16.55) T.push(`OK: 0 architecture violation(s) [databricks]`);
+      if (t >= 16.9) T.push(`<span class="g">Completed successfully</span>`);
+      if (t >= 17.0) T.push(`Done. PASS=10 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=10`);
+      $('t1a').innerHTML = T.join('\n');
+    }
+    // 1b
+    show($('p1b'), env(t, s2[0] + 0.3, s2[1], 0.4, 0.3), rise(t, s2[0] + 0.3)); show($('p1b2'), env(t, s2[0] + 1.4, s2[1], 0.4, 0.3), rise(t, s2[0] + 1.4));
+    {
+      const lines = [
+        '<span class="m"># AGENTS.md — Shared context for every AI assistant and every engineer</span>',
+        '',
+        '<span class="g">## Hard rules (CI enforces these — see `tools/check_principles.py`)</span>',
+        '2. **Every model needs a contract** at `domains/&lt;domain&gt;/contracts/&lt;table&gt;.yaml` with the same layer.',
+        "3. **Read tables only via `{{ ref() }}` or `{{ source() }}`**, never by name. **Never read another domain's bronze or silver**; only its `gold` models.",
+        "4. **Silver and gold models have dbt data tests** in the domain's `_&lt;domain&gt;__models.yml`.",
+      ];
+      const shown = lines.filter((_, i) => t >= s2[0] + 0.5 + i * 0.18);
+      $('t1b').innerHTML = shown.join('\n');
+    }
+    // 1c
+    show($('p1c'), env(t, s3[0] + 0.3, s3[1], 0.4, 0.3), rise(t, s3[0] + 0.3));
+    ['r1', 'r2', 'r3'].forEach((r, i) => show($(r), eo(seg(t, s3[0] + 0.6 + i * 0.35, s3[0] + 0.9 + i * 0.35))));
+    show($('p1c2'), env(t, s3[0] + 0.4, s3[1], 0.4, 0.3), rise(t, s3[0] + 0.4));
+    {
+      const c = 'make check';
+      const y = typed(c, t, 24.1, 30);
+      const T = [`<span class="ps">$ </span>${esc(y)}${y.length < c.length ? caret(t) : ''}`];
+      if (t >= 24.55) T.push('OK: 0 architecture violation(s) [databricks]');
+      $('t1c').innerHTML = T.join('\n');
+    }
+    // 1d
+    show($('p1d'), env(t, s4[0] + 0.3, b, 0.4, 0.35), rise(t, s4[0] + 0.3));
+    show($('p1d2'), env(t, s4[0] + 0.6, b, 0.4, 0.35), rise(t, s4[0] + 0.6));
+    {
+      const R = [
+        '<span class="m">rules:</span>',
+        '  pull_request',
+        '    approvals: <span class="g">1 from CODEOWNERS</span>',
+        '    dismiss stale reviews',
+        '  required_status_checks',
+        '    <span class="g">principles</span>',
+        '    <span class="g">local-build</span>',
+        '    <span class="g">lint</span>',
+        '    <span class="g">secrets</span>',
+        '    <span class="g">stack-validate</span>',
+        '  non_fast_forward · no deletion',
+        '  merge: <span class="g">squash · merge queue</span>',
+      ];
+      $('t1d').innerHTML = R.filter((_, i) => t >= s4[0] + 0.5 + i * 0.12).join('\n');
+      const C = [
+        '<span class="m"># owners review their own domain</span>',
+        '/domains/sales/          @org/de-sales',
+        '/domains/finance/        @org/de-finance',
+        '',
+        '<span class="m"># contracts are a public API</span>',
+        '/domains/sales/contracts/',
+        '              @org/de-sales <span class="g">@org/de-platform</span>',
+        '',
+        '<span class="m"># AI context: Architecture Guild</span>',
+        '/AGENTS.md    @org/de-architecture-guild',
+      ];
+      $('t1d2').innerHTML = C.filter((_, i) => t >= s4[0] + 0.8 + i * 0.12).join('\n');
+    }
+  }
+
+  // ---- parallel
+  if (t >= S.parallel[0] - 0.01 && t < S.parallel[1] + 0.01) renderParallel(t);
+
+  // ---- gates
+  {
+    const [a, b] = S.gates;
+    show($('gcap'), env(t, a + 0.2, b, 0.4, 0.35), rise(t, a + 0.2));
+    show($('gL'), env(t, a + 0.3, b, 0.4, 0.35), rise(t, a + 0.3));
+    show($('gR'), env(t, 53.2, b, 0.4, 0.35), rise(t, 53.2));
+    const lc = "from {{ ref('sales_silver_orders') }} as o";
+    const ly = typed(lc, t, 48.6, 90);
+    $('gLc').innerHTML = `<span class="m">-- finance_gold_revenue_eur_daily.sql</span>\n${esc(ly)}${ly.length < lc.length ? caret(t) : ''}`;
+    $('gLr').innerHTML = t >= 49.6 ? `<span class="r">[cross-domain-read]</span> reads sales_silver;\n<span class="r">only other domains' gold is allowed</span>` : '';
+    show($('gLf'), eo(seg(t, 50.8, 51.15)));
+    $('gLfc').innerHTML = `from {{ ref('<span class="g">sales_gold_revenue_daily</span>') }} as r\n<span class="g">OK: 0 architecture violation(s)</span>`;
+    const rc = ['<span class="m">-- domains/sales/contracts/orders.yaml</span>', '<span class="del">-  - { name: amount,       type: decimal }</span>', '<span class="add">+  - { name: gross_amount, type: decimal }</span>'];
+    $('gRc').innerHTML = rc.filter((_, i) => t >= 53.6 + i * 0.2).join('\n');
+    $('gRr').innerHTML = t >= 54.6 ? `<span class="r">[contract-compat]</span> breaking change: column 'amount' removed.\n<span class="r">Create orders_v2.yaml instead (P5)</span>` : '';
+    show($('gRf'), eo(seg(t, 56.0, 56.35)));
+    $('gRfc').innerHTML = `<span class="g">+ orders_v2.yaml</span>  version 2.0.0\n  orders.yaml  deprecated, sunset 2026-12-31\n<span class="g">OK: 0 architecture violation(s)</span>`;
+  }
+
+  // ---- promote / learn
+  if (t >= S.promote[0] - 0.01 && t < S.promote[1] + 0.01) renderPromote(t);
+  if (t >= S.learn[0] - 0.01 && t < S.learn[1] + 0.01) renderLearn(t);
+
+  // ---- close
+  {
+    const [a, b] = S.close;
+    show($('c1'), eo(seg(t, a + 0.3, a + 0.75)), rise(t, a + 0.3, 0.45, 30));
+    [...$('cstacks').children].forEach((c, i) => show(c, eo(seg(t, a + 0.9 + i * 0.1, a + 1.2 + i * 0.1)), rise(t, a + 0.9 + i * 0.1, 0.3, 12)));
+    show($('c2'), eo(seg(t, a + 1.8, a + 2.2)), rise(t, a + 1.8));
+    show($('cbrand'), eo(seg(t, a + 3.0, a + 3.5)), rise(t, a + 3.0, 0.5, 20));
+    show($('cprac'), eo(seg(t, a + 3.4, a + 3.8)));
+  }
+
+  // ---- persistent brand + tracker
+  const brandO = Math.min(eo(seg(t, 0.2, 0.8)), 1 - eo(seg(t, S.title[0] - 0.3, S.title[0])) + eo(seg(t, S.setup[0], S.setup[0] + 0.4)), 1 - eo(seg(t, S.close[0] - 0.3, S.close[0])));
+  show($('brand'), clamp(brandO));
+  const trackO = Math.min(eo(seg(t, S.setup[0] + 0.2, S.setup[0] + 0.6)), 1 - eo(seg(t, S.close[0] - 0.35, S.close[0])));
+  show($('tracker'), clamp(trackO));
+  const stepScenes = ['setup', 'parallel', 'gates', 'promote', 'learn'];
+  const curStep = stepScenes.findIndex((s) => t >= S[s][0] && t < S[s][1]);
+  [...$('tracker').children].forEach((el, i) => { el.className = 'trk' + (i === curStep ? ' on' : (i < curStep ? ' done' : '')); });
+};
+window.render(0);
+</script>
+</body>
+</html>

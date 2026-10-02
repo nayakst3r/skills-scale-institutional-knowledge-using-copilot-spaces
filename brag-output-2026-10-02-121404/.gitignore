@@ -1,0 +1,6 @@
+# Rebuildable intermediates (sources to rebuild them are in work/)
+work/stills/
+work/video-silent.mp4
+work/soundtrack.wav
+work/*.png
+!work/poster.png

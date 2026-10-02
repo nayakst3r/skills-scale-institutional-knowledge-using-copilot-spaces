@@ -1,0 +1,1 @@
+When every engineer builds with an AI assistant, intent drifts faster than any review can catch. Our answer: put the context in the repo so every assistant reads the same rules, and turn the architecture into CI checks that every change, human or AI, must pass before it merges. Same practice on Fabric, Databricks, Snowflake, Google Cloud and AWS.

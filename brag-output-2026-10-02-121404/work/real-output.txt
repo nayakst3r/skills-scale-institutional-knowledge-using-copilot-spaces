@@ -1,0 +1,39 @@
+### use-stack list
+Stacks:
+  aws            AWS (S3 + Iceberg + Athena + MWAA)
+  azure-fabric   Microsoft Fabric / Azure (Fabric Warehouse + OneLake)
+  databricks     Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP
+  gcp            Google Cloud (BigQuery + Cloud Composer)
+  snowflake      Snowflake (+ Airflow)
+### use-stack databricks
+Stack set to: Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP
+
+Next:
+  pip install -r requirements.txt -r requirements-stack.txt
+  make check && make local-build
+  Then read stacks/databricks/README.md for the cloud setup (OIDC login, repo variables, environments).
+### step1
+
+OK: 0 architecture violation(s) [databricks]
+### step2 check
+domains/finance/models/finance_gold_revenue_eur_daily.sql: [cross-domain-read] reads sales_silver; only other domains' gold is allowed
+
+FAIL: 1 architecture violation(s) [databricks]
+### step3
+### step4a compat
+domains/sales/contracts/orders.yaml: [contract-compat] breaking change: column 'amount' removed. Create orders_v2.yaml instead (P5)
+domains/sales/contracts/orders.yaml: [contract-compat] breaking change: new column 'gross_amount' is REQUIRED (must be NULLABLE). Create orders_v2.yaml instead (P5)
+
+FAIL: 2 architecture violation(s) [databricks]
+### local build (databricks stack)
+OK: 0 architecture violation(s) [databricks]
+Completed successfully
+Done. PASS=10 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=10
+### step 6 guardrail diff (demo/iteration-6-new-guardrail.patch)
++9. **Incremental models declare a `unique_key`** so re-runs and backfills MERGE instead of appending.
++| P7 | **Idempotent, re-runnable pipelines.** Incremental models MERGE on a key; no blind appends. | Safe retries and backfills. | `check_principles.py` (`idempotent-incremental`: incremental models need a `unique_key`); review checklist for the rest |
++        if re.search(r"materialized\s*=\s*['\"]incremental['\"]", cfg) and not re.search(r"\bunique_key\s*=", cfg):
++                Violation("idempotent-incremental", r, "incremental models need a unique_key so re-runs MERGE (P7)")
++def test_incremental_without_unique_key(repo):
++    edit(repo, SILVER, "unique_key='order_id', ", "")
++    assert "idempotent-incremental" in rules(repo)
