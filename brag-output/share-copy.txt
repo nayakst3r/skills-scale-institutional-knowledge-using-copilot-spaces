@@ -1,0 +1,1 @@
+Ten data engineers, ten AI assistants, one architecture. The rules live in the repo for every Copilot to read and run in CI on every PR, so off-architecture SQL and breaking schema changes are blocked before they merge, whether the platform is Fabric, Databricks, Snowflake, Google Cloud or AWS.

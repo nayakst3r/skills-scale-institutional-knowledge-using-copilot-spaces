@@ -1,0 +1,349 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root {
+    --bg: #0B0F14; --panel: #111820; --panel2: #0E141B; --line: #223040; --ink: #E8EDF3; --muted: #8A98A8;
+    --bronze: #C07A45; --silver: #B9C3CF; --gold: #E6B450; --pass: #3FB950; --fail: #F85149;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  body { font-family: 'Inter', sans-serif; color: var(--ink); position: relative; }
+  .abs { position: absolute; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  #glow { left: 0; top: 0; width: 1920px; height: 1080px;
+    background: radial-gradient(1200px 700px at 50% 40%, rgba(230,180,80,0.06), transparent 70%); }
+
+  /* scene 1: tiles */
+  .tile { width: 330px; height: 214px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .tile .hd { height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line);
+    font: 500 16px 'JetBrains Mono', monospace; color: var(--muted); }
+  .tile .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .tile .bd { padding: 18px 16px; font: 400 19px/1.55 'JetBrains Mono', monospace; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .caret { display: inline-block; width: 10px; height: 22px; background: var(--gold); vertical-align: -4px; margin-left: 2px; }
+  #hook { left: 0; top: 720px; width: 1920px; text-align: center; font: 800 104px/1 'Inter'; letter-spacing: -3px; }
+  #hookband { left: 0; top: 660px; width: 1920px; height: 220px; display: none;
+    background: linear-gradient(90deg, transparent, rgba(11,15,20,0.92) 18%, rgba(11,15,20,0.92) 82%, transparent); }
+
+  /* scene 2 */
+  #one { left: 0; top: 250px; width: 1920px; text-align: center; font: 800 150px/1 'Inter'; letter-spacing: -5px; }
+  #layers { left: 420px; top: 490px; width: 1080px; height: 90px; }
+  .seg { top: 0; height: 14px; border-radius: 7px; }
+  .seglabel { top: 34px; font: 600 26px 'JetBrains Mono', monospace; }
+  #sub2 { left: 0; top: 650px; width: 1920px; text-align: center; font: 600 54px 'Inter'; color: var(--silver); letter-spacing: -1px; }
+  #chips { left: 0; top: 790px; width: 1920px; display: flex; justify-content: center; gap: 22px; }
+  .chip { font: 500 26px 'JetBrains Mono', monospace; padding: 12px 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); }
+
+  /* shared caption + panels */
+  .cap { left: 120px; font: 750 72px/1.08 'Inter'; letter-spacing: -2.2px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.45); }
+  .chrome { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 22px; border-bottom: 1px solid var(--line); background: var(--panel2);
+    font: 500 20px 'JetBrains Mono', monospace; color: var(--muted); }
+  .chrome i { width: 13px; height: 13px; border-radius: 50%; background: #2A3746; display: inline-block; }
+  .chrome span { margin-left: 14px; }
+  .term { padding: 26px 34px; font: 400 28px/46px 'JetBrains Mono', monospace; white-space: pre; }
+  .ps { color: var(--gold); }
+  .dim { color: var(--muted); }
+  .ok { color: var(--pass); }
+  .bad { color: var(--fail); }
+  .row { position: relative; }
+  #sel { left: 22px; height: 46px; border-radius: 8px; background: rgba(230,180,80,0.14); border: 1px solid rgba(230,180,80,0.5); }
+  #foot { left: 120px; top: 1000px; display: flex; align-items: center; gap: 14px; font: 500 22px 'JetBrains Mono', monospace; color: var(--muted); }
+  .bar3 { display: flex; gap: 4px; } .bar3 b { width: 22px; height: 8px; border-radius: 4px; display: block; }
+
+  /* scene 4 editor */
+  .code { padding: 22px 34px; font: 400 28px/46px 'JetBrains Mono', monospace; white-space: pre; }
+  .ln { color: #4A5868; display: inline-block; width: 46px; }
+  .ghost { color: #6B7B8C; font-style: italic; }
+  .squig { text-decoration: underline wavy var(--fail); text-decoration-thickness: 2px; text-underline-offset: 8px; }
+  #hint { font: 500 20px 'Inter'; color: var(--muted); padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); }
+  .diffdel { background: rgba(248,81,73,0.13); }
+  .diffadd { background: rgba(63,185,80,0.13); }
+  .hl { color: var(--gold); font-weight: 600; }
+
+  /* scene 6 */
+  .srow { left: 230px; width: 1460px; height: 74px; display: flex; align-items: center; gap: 26px; font: 400 28px 'JetBrains Mono', monospace;
+    border-bottom: 1px solid var(--line); }
+  .srow .nm { width: 240px; font-weight: 600; color: var(--ink); }
+  .srow .ad { width: 290px; color: var(--muted); }
+  .srow .st { color: var(--pass); }
+  .tick { width: 40px; height: 40px; }
+  #end1 { left: 0; top: 330px; width: 1920px; text-align: center; font: 800 132px/1 'Inter'; letter-spacing: -4.5px; }
+  #end2 { left: 0; top: 520px; width: 1920px; text-align: center; font: 600 50px 'Inter'; color: var(--silver); letter-spacing: -1px; }
+  #end3 { left: 0; top: 650px; width: 1920px; display: flex; justify-content: center; }
+  #end3 .chip { color: var(--gold); border-color: rgba(230,180,80,0.45); }
+  #stacks5 { left: 0; top: 780px; width: 1920px; display: flex; justify-content: center; gap: 34px; font: 500 28px 'JetBrains Mono', monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="glow" class="abs"></div>
+
+<!-- Scene 1 -->
+<div id="s1" class="abs" style="left:0;top:0;width:1920px;height:1080px"></div>
+<div id="hookband" class="abs"></div>
+<div id="hook" class="abs">10 engineers. 10 AI assistants.</div>
+
+<!-- Scene 2 -->
+<div id="one" class="abs">One architecture.</div>
+<div id="layers" class="abs"></div>
+<div id="sub2" class="abs">Context in the repo. Principles in CI.</div>
+<div id="chips" class="abs">
+  <div class="chip">AGENTS.md</div><div class="chip">ARCHITECTURE.md</div><div class="chip">CODEOWNERS</div><div class="chip">check_principles.py</div>
+</div>
+
+<!-- Scene 3 -->
+<div id="cap3" class="abs cap" style="top:120px">Pick any of five stacks.</div>
+<div id="p3" class="abs panel" style="left:120px;top:270px;width:1680px;height:600px">
+  <div class="chrome"><i></i><i></i><i></i><span>bash · data-platform</span></div>
+  <div class="abs" id="sel"></div>
+  <div class="term" id="t3"></div>
+</div>
+
+<!-- Scene 4 -->
+<div id="cap4a" class="abs cap" style="top:96px">Copilot goes off-architecture.</div>
+<div id="cap4b" class="abs cap bad" style="top:180px">CI says no.</div>
+<div id="p4e" class="abs panel" style="left:120px;top:320px;width:1680px;height:290px">
+  <div class="chrome"><i></i><i></i><i></i><span>domains/finance/models/finance_gold_revenue_eur_daily.sql</span></div>
+  <div class="code" id="c4"></div>
+  <div class="abs" id="hint" style="right:30px;top:72px">Copilot · Tab to accept</div>
+</div>
+<div id="p4t" class="abs panel" style="left:120px;top:640px;width:1680px;height:300px">
+  <div class="chrome"><i></i><i></i><i></i><span>bash · data-platform</span></div>
+  <div class="term" id="t4"></div>
+</div>
+
+<!-- Scene 5 -->
+<div id="cap5" class="abs cap" style="top:120px">Breaking changes get blocked.</div>
+<div id="p5e" class="abs panel" style="left:120px;top:250px;width:1680px;height:240px">
+  <div class="chrome"><i></i><i></i><i></i><span>domains/sales/contracts/orders.yaml</span></div>
+  <div class="code" id="c5"></div>
+</div>
+<div id="p5t" class="abs panel" style="left:120px;top:520px;width:1680px;height:430px">
+  <div class="chrome"><i></i><i></i><i></i><span>bash · data-platform</span></div>
+  <div class="term" id="t5" style="font-size:26px;line-height:44px"></div>
+</div>
+
+<!-- Scene 6 -->
+<div id="s6h" class="abs mono" style="left:230px;top:290px;font-size:26px;color:var(--muted)"></div>
+<div id="s6" class="abs" style="left:0;top:0"></div>
+<div id="end1" class="abs">One method. Five stacks.</div>
+<div id="end2" class="abs">VS Code + GitHub Copilot · dbt · Terraform</div>
+<div id="end3" class="abs"><div class="chip">data-platform-framework  ·  make check</div></div>
+<div id="stacks5" class="abs"><span>Fabric / Azure</span><span>Databricks</span><span>Snowflake</span><span>Google Cloud</span><span>AWS</span></div>
+
+<!-- footer brand mark (scenes 3–5) -->
+<div id="foot" class="abs"><div class="bar3"><b style="background:var(--bronze)"></b><b style="background:var(--silver)"></b><b style="background:var(--gold)"></b></div>data-platform-framework</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3);           // ease out cubic
+const eio = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const typed = (s, t, start, cps) => s.slice(0, Math.max(0, Math.floor((t - start) * cps)));
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// in/out envelope: fades/slides in over [a, a+d], out over [b-d2, b]
+function env(t, a, b, d = 0.35, d2 = 0.3) { return Math.min(eo(seg(t, a, a + d)), 1 - eio(seg(t, b - d2, b))); }
+function show(el, o, dy = 0, sc = 1) {
+  el.style.opacity = o; el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+  el.style.transform = `translateY(${dy}px) scale(${sc})`;
+}
+const caretOn = (t) => (Math.floor(t * 2.2) % 2 === 0);
+
+// ---------- Scene 1 build ----------
+const lines1 = [
+  "{{ config(materialized='incremental') }}",
+  "from {{ ref('sales_silver_orders') }}",
+  "select * from prod.sales_silver.orders",
+  "cast(order_ts as date) as order_date,",
+  "sum(amount) / nullif(count(*), 0)",
+  "source('finance_bronze', 'raw_fx_rates')",
+  "schedule=\"0 5 * * *\",",
+  "upper(currency) as currency,",
+  "- { name: region, type: string }",
+  "dbt build --select tag:finance",
+];
+const dots = ['#C07A45','#B9C3CF','#E6B450','#3FB950','#58A6FF','#C07A45','#B9C3CF','#E6B450','#3FB950','#58A6FF'];
+const tiles = [];
+for (let i = 0; i < 10; i++) {
+  const el = document.createElement('div');
+  el.className = 'tile abs';
+  const col = i % 5, row = Math.floor(i / 5);
+  el.dataset.x = 87 + col * (330 + 24); el.dataset.y = 130 + row * (214 + 24);
+  el.innerHTML = `<div class="hd"><span class="dot" style="background:${dots[i]}"></span>engineer ${String(i + 1).padStart(2, '0')} · Copilot</div><div class="bd"></div>`;
+  $('s1').appendChild(el); tiles.push(el);
+}
+
+// ---------- Scene 2 build ----------
+const layerDefs = [['bronze', 'var(--bronze)'], ['silver', 'var(--silver)'], ['gold', 'var(--gold)']];
+const segEls = layerDefs.map(([name, color], i) => {
+  const s = document.createElement('div'); s.className = 'abs seg'; s.style.left = (i * 370) + 'px'; s.style.background = color;
+  const l = document.createElement('div'); l.className = 'abs seglabel'; l.style.left = (i * 370) + 'px'; l.style.color = color; l.textContent = name;
+  $('layers').appendChild(s); $('layers').appendChild(l); return [s, l];
+});
+
+// ---------- Scene 6 build ----------
+const stackRows = [
+  ['azure-fabric', 'dbt-fabric'], ['databricks', 'dbt-databricks'], ['snowflake', 'dbt-snowflake'], ['gcp', 'dbt-bigquery'], ['aws', 'dbt-athena'],
+];
+const tickSvg = `<svg class="tick" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="rgba(63,185,80,0.16)" stroke="#3FB950" stroke-width="2"/><path d="M12 20.5l5.5 5.5L28.5 14" fill="none" stroke="#3FB950" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const rows6 = stackRows.map(([nm, ad], i) => {
+  const r = document.createElement('div'); r.className = 'srow abs'; r.style.top = (350 + i * 88) + 'px';
+  r.innerHTML = `${tickSvg}<span class="nm">${nm}</span><span class="ad">${ad}</span><span class="st">dbt parse: OK  ·  local build: OK (PASS=10)</span>`;
+  $('s6').appendChild(r); return r;
+});
+
+// ---------- render ----------
+window.render = function (t) {
+  // ===== Scene 1: 0.0 – 3.0 =====
+  const s1 = t < 3.05;
+  tiles.forEach((el, i) => {
+    const x = +el.dataset.x, y = +el.dataset.y;
+    const a = 0.04 * i;                                       // staggered entrance
+    const inn = eo(seg(t, a, a + 0.35));
+    const col = seg(t, 2.5, 3.0);                              // collapse to centre
+    const k = eio(col);
+    const cx = 960 - 165, cy = 540 - 107;
+    const nx = x + (cx - x) * k, ny = y + (cy - y) * k + (1 - inn) * 30;
+    const o = s1 ? inn * (1 - k) : 0;
+    el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    show(el, o * (1 - 0.35 * eo(seg(t, 0.6, 1.0))), 0, 1 - 0.35 * k);
+    const start = 0.15 + 0.09 * i;
+    const txt = typed(lines1[i], t, start, 30);
+    const done = txt.length >= lines1[i].length;
+    el.querySelector('.bd').innerHTML = esc(txt) + ((!done || caretOn(t)) && t > start ? '<span class="caret"></span>' : '');
+    el.querySelector('.bd').style.opacity = 1 - eo(seg(t, 2.3, 2.5));   // code out before the tiles collapse
+    el.querySelector('.hd').style.opacity = 1 - eo(seg(t, 2.3, 2.5));
+  });
+  const hk = env(t, 0.55, 2.95, 0.35, 0.3);
+  show($('hook'), hk, (1 - eo(seg(t, 0.55, 0.9))) * 24);
+  show($('hookband'), hk);
+
+  // ===== Scene 2: 3.0 – 6.5 =====
+  const o2 = env(t, 3.0, 6.45, 0.4, 0.3);
+  show($('one'), o2, (1 - eo(seg(t, 3.0, 3.4))) * 40 - eio(seg(t, 6.15, 6.45)) * 30);
+  segEls.forEach(([s, l], i) => {
+    const g = eo(seg(t, 3.3 + i * 0.22, 3.75 + i * 0.22));
+    s.style.width = (340 * g) + 'px';
+    const oo = Math.min(g, 1 - eio(seg(t, 6.15, 6.45)));
+    show(s, oo); show(l, Math.min(eo(seg(t, 3.5 + i * 0.22, 3.85 + i * 0.22)), 1 - eio(seg(t, 6.15, 6.45))));
+  });
+  show($('sub2'), env(t, 3.75, 6.45, 0.4, 0.3), (1 - eo(seg(t, 3.75, 4.15))) * 20);
+  [...$('chips').children].forEach((c, i) => {
+    show(c, env(t, 4.2 + i * 0.12, 6.45, 0.3, 0.3), (1 - eo(seg(t, 4.2 + i * 0.12, 4.5 + i * 0.12))) * 16);
+  });
+  $('chips').style.visibility = (t > 4.1 && t < 6.5) ? 'visible' : 'hidden';
+
+  // ===== Scene 3: 6.5 – 10.5 =====
+  show($('cap3'), env(t, 6.55, 10.45, 0.35, 0.3), (1 - eo(seg(t, 6.55, 6.9))) * 20);
+  const p3 = env(t, 6.6, 10.45, 0.35, 0.3);
+  show($('p3'), p3, (1 - eo(seg(t, 6.6, 6.95))) * 30);
+  {
+    const L = [];
+    const cmd1 = './scripts/use-stack.sh';
+    const ty1 = typed(cmd1, t, 6.85, 50);
+    L.push(`<span class="ps">$ </span>${esc(ty1)}${ty1.length < cmd1.length && caretOn(t * 3) ? '<span class="caret"></span>' : ''}`);
+    const out = [
+      'Stacks:',
+      '  aws            AWS (S3 + Iceberg + Athena + MWAA)',
+      '  azure-fabric   Microsoft Fabric / Azure (Fabric Warehouse + OneLake)',
+      '  databricks     Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP',
+      '  gcp            Google Cloud (BigQuery + Cloud Composer)',
+      '  snowflake      Snowflake (+ Airflow)',
+    ];
+    out.forEach((s, i) => { if (t >= 7.4 + i * 0.08) L.push(i === 0 ? `<span class="dim">${esc(s)}</span>` : esc(s)); });
+    const cmd2 = './scripts/use-stack.sh databricks';
+    if (t >= 8.55) {
+      const ty2 = typed(cmd2, t, 8.6, 55);
+      L.push('');
+      L.push(`<span class="ps">$ </span>${esc(ty2)}${ty2.length < cmd2.length && caretOn(t * 3) ? '<span class="caret"></span>' : ''}`);
+    }
+    if (t >= 9.35) L.push(`<span class="ok">Stack set to:</span> <span class="hl">Databricks</span> (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP`);
+    $('t3').innerHTML = L.join('\n');
+    // selector sweeps aws -> azure-fabric -> databricks
+    const sw = seg(t, 7.95, 8.55);
+    const rowIdx = 1 + Math.min(2, sw * 2.999);           // 1..3 (row 3 = databricks)
+    const r = 1 + eio(Math.min(1, sw)) * 2;
+    const vis = t >= 7.9 ? Math.min(eo(seg(t, 7.9, 8.1)), 1) : 0;
+    $('sel').style.top = (54 + 26 + (1 + r) * 46 - 0) + 'px';
+    $('sel').style.width = '1630px';
+    show($('sel'), vis * p3);
+  }
+
+  // ===== Scene 4: 10.5 – 14.5 =====
+  show($('cap4a'), env(t, 10.55, 14.45, 0.35, 0.3), (1 - eo(seg(t, 10.55, 10.9))) * 20);
+  show($('cap4b'), env(t, 12.45, 14.45, 0.25, 0.3), (1 - eo(seg(t, 12.45, 12.7))) * 14);
+  const p4 = env(t, 10.6, 14.45, 0.35, 0.3);
+  show($('p4e'), p4, (1 - eo(seg(t, 10.6, 10.95))) * 30);
+  show($('p4t'), env(t, 11.75, 14.45, 0.3, 0.3), (1 - eo(seg(t, 11.75, 12.05))) * 30);
+  {
+    const ghost = "{{ ref('sales_silver_orders') }} as o";
+    const gt = typed(ghost, t, 11.0, 70);
+    const accepted = t >= 11.75;
+    const flagged = t >= 12.5;
+    let fromLine;
+    if (!accepted) fromLine = `from <span class="ghost">${esc(gt)}</span>`;
+    else fromLine = `from ${flagged ? '<span class="squig">' : ''}${esc(ghost)}${flagged ? '</span>' : ''}`;
+    const C = [
+      `<span class="ln">1</span>select`,
+      `<span class="ln">2</span>    o.order_date,`,
+      `<span class="ln">3</span>    sum(o.amount * fx.rate) as revenue_eur`,
+      `<span class="ln">4</span>${fromLine}`,
+    ];
+    $('c4').innerHTML = C.join('\n');
+    show($('hint'), Math.min(env(t, 11.05, 11.8, 0.2, 0.15), p4));
+    const T = [];
+    const cmd = 'make check';
+    const ty = typed(cmd, t, 11.95, 30);
+    T.push(`<span class="ps">$ </span>${esc(ty)}${ty.length < cmd.length && caretOn(t * 3) ? '<span class="caret"></span>' : ''}`);
+    if (t >= 12.45) T.push(`<span class="dim">domains/finance/models/finance_gold_revenue_eur_daily.sql:</span>`);
+    if (t >= 12.5) T.push(`<span class="bad">[cross-domain-read]</span> reads sales_silver; <span class="hl">only other domains' gold is allowed</span>`);
+    if (t >= 12.75) T.push(`<span class="bad" style="font-weight:600">FAIL: 1 architecture violation(s) [databricks]</span>`);
+    $('t4').innerHTML = T.join('\n');
+  }
+
+  // ===== Scene 5: 14.5 – 18.0 =====
+  show($('cap5'), env(t, 14.55, 17.95, 0.35, 0.3), (1 - eo(seg(t, 14.55, 14.9))) * 20);
+  show($('p5e'), env(t, 14.6, 17.95, 0.35, 0.3), (1 - eo(seg(t, 14.6, 14.95))) * 30);
+  show($('p5t'), env(t, 15.35, 17.95, 0.3, 0.3), (1 - eo(seg(t, 15.35, 15.65))) * 30);
+  {
+    const C = [`<span class="ln">16</span>  - { name: currency,     type: string,  mode: REQUIRED }`];
+    if (t >= 14.95) C.push(`<span class="diffdel"><span class="ln bad">-</span><span class="bad">  - { name: amount,       type: decimal, mode: REQUIRED }</span>     </span>`);
+    if (t >= 15.15) C.push(`<span class="diffadd"><span class="ln ok">+</span><span class="ok">  - { name: gross_amount, type: decimal, mode: REQUIRED }</span>     </span>`);
+    $('c5').innerHTML = C.join('\n');
+    const T = [];
+    const cmd = 'python3 tools/check_principles.py . --compat-base origin/main';
+    const ty = typed(cmd, t, 15.5, 100);
+    T.push(`<span class="ps">$ </span>${esc(ty)}${ty.length < cmd.length && caretOn(t * 3) ? '<span class="caret"></span>' : ''}`);
+    if (t >= 16.2) T.push(`<span class="bad">[contract-compat]</span> breaking change: column 'amount' removed. <span class="hl">Create orders_v2.yaml instead (P5)</span>`);
+    if (t >= 16.35) T.push(`<span class="bad">[contract-compat]</span> breaking change: new column 'gross_amount' is REQUIRED (must be NULLABLE).`);
+    if (t >= 16.35) T.push(`    <span class="hl">Create orders_v2.yaml instead (P5)</span>`);
+    if (t >= 16.6) T.push(`<span class="bad" style="font-weight:600">FAIL: 2 architecture violation(s) [databricks]</span>`);
+    $('t5').innerHTML = T.join('\n');
+  }
+
+  // footer mark for terminal scenes
+  show($('foot'), Math.min(env(t, 6.6, 17.95, 0.4, 0.3), 0.9));
+
+  // ===== Scene 6: 18.0 – 22.0 =====
+  const listOut = 1 - eio(seg(t, 19.35, 19.65));
+  $('s6h').textContent = '$ ./scripts/verify-all-stacks.sh';
+  show($('s6h'), Math.min(eo(seg(t, 18.05, 18.3)), listOut));
+  rows6.forEach((r, i) => {
+    const a = 18.2 + i * 0.17;
+    show(r, Math.min(eo(seg(t, a, a + 0.22)), listOut), (1 - eo(seg(t, a, a + 0.22))) * 18 - eio(seg(t, 19.35, 19.65)) * 30);
+  });
+  show($('end1'), eo(seg(t, 19.6, 19.95)), (1 - eo(seg(t, 19.6, 19.95))) * 30);
+  show($('end2'), eo(seg(t, 19.85, 20.2)), (1 - eo(seg(t, 19.85, 20.2))) * 20);
+  show($('end3'), eo(seg(t, 20.1, 20.4)), (1 - eo(seg(t, 20.1, 20.4))) * 14);
+  [...$('stacks5').children].forEach((c, i) => show(c, eo(seg(t, 20.3 + i * 0.08, 20.55 + i * 0.08))));
+  $('stacks5').style.visibility = t > 20.25 ? 'visible' : 'hidden';
+
+  $('glow').style.opacity = 0.6 + 0.4 * Math.sin(t * 0.6);
+};
+window.render(0);
+</script>
+</body>
+</html>

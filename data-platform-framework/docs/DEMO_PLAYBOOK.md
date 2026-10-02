@@ -143,6 +143,7 @@ Or apply `make demo-step STEP=iteration-4a-breaking-broken`, then run the compat
 
 ```
 domains/sales/contracts/orders.yaml: [contract-compat] breaking change: column 'amount' removed. Create orders_v2.yaml instead (P5)
+domains/sales/contracts/orders.yaml: [contract-compat] breaking change: new column 'gross_amount' is REQUIRED (must be NULLABLE). Create orders_v2.yaml instead (P5)
 ```
 
 (`make local-build` also fails: `sales_gold_revenue_daily` still sums `amount`. Two independent safety nets.)

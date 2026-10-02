@@ -1,0 +1,27 @@
+### use-stack list
+Stacks:
+  aws            AWS (S3 + Iceberg + Athena + MWAA)
+  azure-fabric   Microsoft Fabric / Azure (Fabric Warehouse + OneLake)
+  databricks     Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP
+  gcp            Google Cloud (BigQuery + Cloud Composer)
+  snowflake      Snowflake (+ Airflow)
+### use-stack databricks
+Stack set to: Databricks (Unity Catalog + Lakeflow Jobs), on Azure, AWS or GCP
+
+Next:
+  pip install -r requirements.txt -r requirements-stack.txt
+  make check && make local-build
+  Then read stacks/databricks/README.md for the cloud setup (OIDC login, repo variables, environments).
+### step1
+
+OK: 0 architecture violation(s) [databricks]
+### step2 check
+domains/finance/models/finance_gold_revenue_eur_daily.sql: [cross-domain-read] reads sales_silver; only other domains' gold is allowed
+
+FAIL: 1 architecture violation(s) [databricks]
+### step3
+### step4a compat
+domains/sales/contracts/orders.yaml: [contract-compat] breaking change: column 'amount' removed. Create orders_v2.yaml instead (P5)
+domains/sales/contracts/orders.yaml: [contract-compat] breaking change: new column 'gross_amount' is REQUIRED (must be NULLABLE). Create orders_v2.yaml instead (P5)
+
+FAIL: 2 architecture violation(s) [databricks]
