@@ -1,0 +1,11 @@
+# Managed by Plumbline (/plumbline init). Gemini CLI custom command.
+description = "Adopt Plumbline in this existing repository, alongside the guardrails it already has"
+prompt = '''
+@{.claude/skills/plumbline/SKILL.md}
+
+The Plumbline skill is above. Run its `adopt` command with these arguments, following the skill and the reference file
+it points to exactly: {{args}}
+
+Run Plumbline's engine with `python3 .claude/skills/plumbline/run.py …` where the skill says to. Respect AGENTS.md and ARCHITECTURE.md.
+Never merge, approve or push to the default branch; stop and hand over with the review packet.
+'''

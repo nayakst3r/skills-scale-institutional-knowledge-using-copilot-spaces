@@ -1,0 +1,33 @@
+# Plumbline policy-as-code. Commit this file; change it via PR like any other code.
+# Rule catalogue: PL001 secrets · PL002 stubs · PL003 chatbot text · PL004 narrating comments
+# PL005 debug leftovers · PL006 undeclared/hallucinated deps · PL007 duplication · PL008 no tests
+# PL009 swallowed exceptions · PL010 oversized change · PL011 prose filler · PL012 provenance
+[plumbline]
+fail_on = "error"            # error | warn | info | never
+min_score = 70               # PR fails below this score (0-100)
+max_changed_lines = 400
+max_comment_ratio = 0.45
+require_tests_for = ["src/**", "app/**", "lib/**"]
+test_globs = ["tests/**", "test/**", "**/*_test.*", "**/*.test.*", "**/*.spec.*", "**/test_*.py"]
+exclude = [".git/**", "node_modules/**", ".venv/**", "venv/**", "dist/**", "build/**",
+           "**/*.min.js", "**/*.lock", "package-lock.json", ".plumbline/**", ".claude/skills/plumbline/**",
+           "**/__pycache__/**"]
+disabled_rules = []
+require_ai_trailer = __REQUIRE_TRAILER__
+extra_banned_phrases = []
+# Work reaches agents only when a human applies this label to an issue. The guard blocks agents applying it.
+agent_ready_label = "ready-for-agent"
+humans_release_work = true
+
+[plumbline.severity_overrides]
+# PL008 = "error"   # tighten once the team is used to writing tests with AI
+
+# Team coding standards as rules. Edit with `/plumbline rules`. Each needs a unique id.
+# [[plumbline.custom_rules]]
+# id = "TEAM001"
+# title = "Use the shared logger"
+# pattern = '^\s*import logging\s*$'
+# message = "Use shared.logging.get_logger() so logs carry correlation IDs (ARCHITECTURE.md section 7)."
+# severity = "warn"                 # error | warn | info
+# paths = ["src/**"]
+# exclude_paths = ["src/shared/**"]

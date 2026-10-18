@@ -1,0 +1,11 @@
+# Managed by Plumbline (/plumbline init). Gemini CLI custom command.
+description = "Review a branch or PR against the architecture and the review rubric (advisory)"
+prompt = '''
+@{.claude/skills/plumbline/SKILL.md}
+
+The Plumbline skill is above. Run its `review` command with these arguments, following the skill and the reference file
+it points to exactly: {{args}}
+
+Run Plumbline's engine with `python3 .claude/skills/plumbline/run.py …` where the skill says to. Respect AGENTS.md and ARCHITECTURE.md.
+Never merge, approve or push to the default branch; stop and hand over with the review packet.
+'''

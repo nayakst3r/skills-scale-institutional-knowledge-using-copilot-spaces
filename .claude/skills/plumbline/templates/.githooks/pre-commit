@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Plumbline pre-commit: blocks secrets, stubs, chatbot text and hallucinated deps before they're committed.
+# Bypass (discouraged, audited in CI anyway): git commit --no-verify
+exec python3 "$(git rev-parse --show-toplevel)/.plumbline/plumbline.py" --staged

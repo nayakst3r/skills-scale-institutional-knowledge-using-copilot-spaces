@@ -1,0 +1,41 @@
+name: Feature
+description: A unit of work small enough for one branch, one PR and one engineer (with their agent).
+labels: [feature, needs-triage]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What should be true when this is done, from the user's point of view?
+    validations: { required: true }
+  - type: input
+    id: module
+    attributes:
+      label: Module(s)
+      description: Which module(s) from ARCHITECTURE.md will change? Ideally one.
+      placeholder: application
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable statements. These become the tests.
+      placeholder: |
+        - Given ..., when ..., then ...
+    validations: { required: true }
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What must NOT change. Agents use this to avoid scope creep.
+    validations: { required: true }
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes, links, related ADRs
+  - type: dropdown
+    id: arch_change
+    attributes:
+      label: Does this need an architecture change?
+      options: ["No", "Yes — ADR required first"]
+    validations: { required: true }

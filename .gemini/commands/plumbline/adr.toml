@@ -1,0 +1,11 @@
+# Managed by Plumbline (/plumbline init). Gemini CLI custom command.
+description = "Record an architecture decision (ADR) before changing the architecture"
+prompt = '''
+@{.claude/skills/plumbline/SKILL.md}
+
+The Plumbline skill is above. Run its `adr` command with these arguments, following the skill and the reference file
+it points to exactly: {{args}}
+
+Run Plumbline's engine with `python3 .claude/skills/plumbline/run.py …` where the skill says to. Respect AGENTS.md and ARCHITECTURE.md.
+Never merge, approve or push to the default branch; stop and hand over with the review packet.
+'''

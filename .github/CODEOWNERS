@@ -1,0 +1,19 @@
+# BEGIN plumbline (generated from ARCHITECTURE.md - run `make codeowners`; edit owners there)
+* @nayakst3r
+/src/kestrel/ingestion/** @nayakst3r
+/src/kestrel/shared/** @nayakst3r
+/src/kestrel/__init__.py @nayakst3r
+/dags/** @nayakst3r
+/models/metering/** @nayakst3r
+/models/customer/** @nayakst3r
+/models/billing/** @nayakst3r
+/ARCHITECTURE.md @nayakst3r
+/AGENTS.md @nayakst3r
+/AI_POLICY.md @nayakst3r
+/CONTRIBUTING.md @nayakst3r
+/CODE_OF_CONDUCT.md @nayakst3r
+/plumbline.toml @nayakst3r
+/.plumbline/ @nayakst3r
+/.github/ @nayakst3r
+/docs/adr/ @nayakst3r
+# END plumbline

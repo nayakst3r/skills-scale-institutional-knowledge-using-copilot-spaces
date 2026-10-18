@@ -1,0 +1,23 @@
+# Azure DevOps: add as a Build Validation branch policy on main.
+trigger: [__DEFAULT_BRANCH__]
+pr: [__DEFAULT_BRANCH__]
+pool: { vmImage: ubuntu-latest }
+steps:
+  - checkout: self
+    fetchDepth: 0
+  - task: UsePythonVersion@0
+    inputs: { versionSpec: "3.12" }
+  - bash: |
+      set +e
+      TARGET="${SYSTEM_PULLREQUEST_TARGETBRANCH#refs/heads/}"
+      if [ -n "$TARGET" ]; then BASE="origin/$TARGET"; else BASE="HEAD~1"; fi
+      OUT="$(Build.ArtifactStagingDirectory)/CodeAnalysisLogs"; mkdir -p "$OUT"
+      python .plumbline/plumbline.py --diff "$BASE" --format markdown -o plumbline.md
+      RC=$?
+      python .plumbline/plumbline.py --diff "$BASE" --format sarif -o "$OUT/plumbline.sarif"
+      echo "##vso[task.uploadsummary]$(pwd)/plumbline.md"
+      exit $RC
+    displayName: Plumbline gate
+  - publish: $(Build.ArtifactStagingDirectory)/CodeAnalysisLogs
+    artifact: CodeAnalysisLogs   # shown by the "SARIF SAST Scans Tab" extension
+    condition: always()

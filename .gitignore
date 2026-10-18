@@ -6,3 +6,7 @@ dbt_packages/
 *.duckdb
 *.duckdb.wal
 __pycache__/
+plumbline.md
+plumbline*.sarif
+plumbline-full.json
+lefthook-local.yml

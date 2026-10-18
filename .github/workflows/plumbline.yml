@@ -1,0 +1,43 @@
+name: plumbline
+on:
+  pull_request:
+  push:
+    branches: [plumbline-demo]
+permissions:
+  contents: read
+  security-events: write   # SARIF upload -> Code scanning alerts
+  pull-requests: write     # sticky PR summary
+jobs:
+  gate:
+    name: plumbline-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Gate changed files
+        id: gate
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: |
+          set +e
+          python .plumbline/plumbline.py --diff "$BASE" --format markdown -o plumbline.md
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          python .plumbline/plumbline.py --diff "$BASE" --format sarif -o plumbline.sarif
+          python .plumbline/plumbline.py --all --format json -o plumbline-full.json
+          cat plumbline.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with: { sarif_file: plumbline.sarif, category: plumbline }
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with: { header: plumbline, path: plumbline.md }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: plumbline-report, path: "plumbline*" }
+      - name: Enforce
+        if: steps.gate.outputs.rc != '0'
+        run: |
+          echo "Plumbline gate failed - see the job summary"
+          exit 1

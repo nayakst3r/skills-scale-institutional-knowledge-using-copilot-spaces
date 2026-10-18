@@ -1,0 +1,36 @@
+{
+  "context": {
+    "fileName": [
+      "AGENTS.md",
+      "GEMINI.md"
+    ]
+  },
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "run_shell_command",
+        "hooks": [
+          {
+            "type": "command",
+            "name": "plumbline-human-review-guard",
+            "command": "python3 \"$GEMINI_PROJECT_DIR/.plumbline/guard.py\"",
+            "timeout": 15000
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "type": "command",
+            "name": "plumbline-quality-gate",
+            "command": "python3 \"$GEMINI_PROJECT_DIR/.plumbline/plumbline.py\" --hook",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}

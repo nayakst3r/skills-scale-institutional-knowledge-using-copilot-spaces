@@ -1,0 +1,28 @@
+# Prepares the environment the Copilot cloud agent works in, so its commits go through the same checks as people's.
+# The job must be called `copilot-setup-steps`. Managed by Plumbline; edit freely, Plumbline keeps a changed file.
+name: Copilot setup steps
+on:
+  workflow_dispatch:
+  push:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+  pull_request:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install git hooks (Lefthook) so the agent's commits are checked
+        run: |
+          if [ -f lefthook.yml ]; then npx --yes lefthook@1 install; fi
+      - name: Plumbline setup check
+        run: python3 .claude/skills/plumbline/run.py doctor || true
