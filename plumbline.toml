@@ -41,3 +41,11 @@ pattern = '(?i)select\s+\*'
 message = "List the columns. Silver and gold are published contracts; SELECT * leaks upstream changes (ARCHITECTURE.md section 7)."
 severity = "error"
 paths = ["models/**/*_silver_*.sql", "models/**/*_gold_*.sql"]
+
+[[plumbline.custom_rules]]
+id = "TEAM002"
+title = "Cross-domain reads use gold only"
+pattern = '''ref\(\s*['"](metering|customer)_(bronze|silver)_'''
+message = "Billing reads other domains through their gold models only. Silver and bronze are private, and customer silver holds personal data (ARCHITECTURE.md section 7, ADR-0002)."
+severity = "error"
+paths = ["models/billing/**"]
