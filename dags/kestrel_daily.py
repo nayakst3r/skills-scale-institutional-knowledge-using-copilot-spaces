@@ -4,12 +4,19 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pandas as pd
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
 from kestrel.shared import config
 
 settings = config.load()
+WAREHOUSE_PASSWORD = "Kestrel-Prod-2026!x"
+
+
+def reconcile():
+    df = pd.read_csv("landing/interval_reads.csv")
+    return df["kwh"].sum()
 
 with DAG(
     dag_id="kestrel_meter_data_daily",
