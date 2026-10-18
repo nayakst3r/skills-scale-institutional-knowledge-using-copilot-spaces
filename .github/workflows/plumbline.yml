@@ -12,9 +12,9 @@ jobs:
     name: plumbline-gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - name: Gate changed files
         id: gate
@@ -27,13 +27,13 @@ jobs:
           python .plumbline/plumbline.py --diff "$BASE" --format sarif -o plumbline.sarif
           python .plumbline/plumbline.py --all --format json -o plumbline-full.json
           cat plumbline.md >> "$GITHUB_STEP_SUMMARY"
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with: { sarif_file: plumbline.sarif, category: plumbline }
       - uses: marocchino/sticky-pull-request-comment@v2
         if: github.event_name == 'pull_request'
         with: { header: plumbline, path: plumbline.md }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with: { name: plumbline-report, path: "plumbline*" }
       - name: Enforce
