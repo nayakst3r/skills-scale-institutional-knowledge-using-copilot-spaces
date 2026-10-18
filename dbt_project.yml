@@ -1,0 +1,32 @@
+name: kestrel
+version: "0.1.0"
+config-version: 2
+profile: kestrel
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["data_tests"]
+target-path: "target"
+clean-targets: ["target"]
+
+models:
+  kestrel:
+    +materialized: table
+    metering:
+      +schema: metering
+    customer:
+      +schema: customer
+    billing:
+      +schema: billing
+
+seeds:
+  kestrel:
+    +schema: customer
+    customer_raw_accounts:
+      +column_types:
+        account_id: varchar
+        nmi: varchar
+        tariff_code: varchar
+        energy_rate_c_per_kwh: decimal(10,4)
+        daily_supply_c: decimal(10,4)
+        email: varchar

@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: customer_silver_accounts
+    description: Customer accounts, typed. Holds personal data.
+    columns:
+      - name: account_id
+        data_tests: [unique, not_null]
+      - name: email
+        meta: {pii: true}
+  - name: customer_gold_accounts
+    description: Published accounts with meter and tariff. No personal data.
+    columns:
+      - name: account_id
+        data_tests: [unique, not_null]
+      - name: nmi
+        data_tests: [unique, not_null]

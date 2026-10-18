@@ -1,0 +1,9 @@
+version: 2
+sources:
+  - name: landing
+    description: Files written by the NEM12 ingestion job (src/kestrel/ingestion).
+    config:
+      external_location: "read_csv('{{ env_var('KESTREL_LANDING_DIR', 'landing') }}/{name}.csv', all_varchar = true, header = true)"
+    tables:
+      - name: interval_reads
+        description: One row per NEM12 interval value, as supplied.

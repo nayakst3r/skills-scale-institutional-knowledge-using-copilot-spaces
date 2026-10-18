@@ -1,0 +1,4 @@
+account_id,nmi,tariff_code,energy_rate_c_per_kwh,daily_supply_c,email
+KA-1001,4103000001,RES-FLAT,31.90,98.50,alex.example@example.com
+KA-1002,4103000002,RES-FLAT,31.90,98.50,sam.example@example.com
+KA-1003,6305000003,SME-FLAT,28.40,132.00,accounts@example.com

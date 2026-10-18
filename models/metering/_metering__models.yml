@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: metering_silver_interval_reads
+    description: One row per meter stream per interval, typed and de-duplicated.
+    columns:
+      - name: nmi
+        data_tests: [not_null]
+      - name: interval_start
+        data_tests: [not_null]
+      - name: kwh
+        data_tests: [not_null]
+  - name: metering_gold_daily_usage
+    description: Published daily consumption (kWh) per meter, in market time.
+    columns:
+      - name: nmi
+        data_tests: [not_null]
+      - name: read_date
+        data_tests: [not_null]
+      - name: kwh
+        data_tests: [not_null]

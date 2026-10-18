@@ -1,0 +1,22 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [plumbline-demo]
+permissions:
+  contents: read
+jobs:
+  test-and-build:
+    name: tests-and-dbt-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - name: Python unit tests
+        run: python -m pytest -q
+      - name: Ingest sample NEM12 files
+        run: PYTHONPATH=src python -m kestrel.ingestion.nem12 sample_data/*.csv
+      - name: dbt build (models + data tests on DuckDB)
+        run: dbt build --profiles-dir .

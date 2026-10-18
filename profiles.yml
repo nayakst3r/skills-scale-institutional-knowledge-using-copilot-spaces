@@ -1,0 +1,8 @@
+# Connection targets. Settings come from environment variables; nothing secret lives in this file.
+kestrel:
+  target: "{{ env_var('KESTREL_DBT_TARGET', 'local') }}"
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('KESTREL_DUCKDB_PATH', 'kestrel.duckdb') }}"
+      threads: 4
