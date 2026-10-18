@@ -18,6 +18,8 @@ extra_banned_phrases = []
 # Work reaches agents only when a human applies this label to an issue. The guard blocks agents applying it.
 agent_ready_label = "ready-for-agent"
 humans_release_work = true
+# Branches only a reviewed pull request may change. The guard blocks agents committing or pushing to them directly.
+protected_branches = ["plumbline-demo"]
 # Packages the runtime provides, so they are not "undeclared": Airflow comes with the managed Airflow environment.
 provided_packages = ["airflow"]
 

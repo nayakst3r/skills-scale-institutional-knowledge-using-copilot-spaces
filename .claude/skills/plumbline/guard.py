@@ -27,8 +27,8 @@ RULES: list[tuple[re.Pattern, str]] = [
 ]
 
 
-def agent_ready_label() -> str | None:
-    """The label that releases work to agents. Only humans may apply it (plumbline.toml: agent_ready_label)."""
+def _config() -> dict | None:
+    """The [plumbline] section of plumbline.toml; {} if unreadable (never disables the guard); None if absent."""
     top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
     cfg = Path(top) / "plumbline.toml" if top else None
     if not cfg or not cfg.exists():
@@ -37,11 +37,31 @@ def agent_ready_label() -> str | None:
         import tomllib
         data = tomllib.loads(cfg.read_text())
     except Exception:  # unreadable config must not disable the guard's other rules
-        return "ready-for-agent"
-    section = data.get("plumbline", data)
+        return {}
+    return data.get("plumbline", data)
+
+
+def agent_ready_label() -> str | None:
+    """The label that releases work to agents. Only humans may apply it (plumbline.toml: agent_ready_label)."""
+    section = _config()
+    if section is None:
+        return None
     if section.get("humans_release_work", True) is False:
         return None
     return section.get("agent_ready_label", "ready-for-agent")
+
+
+def protected_branches() -> set[str]:
+    """Conventional names, plus the remote's default branch, plus plumbline.toml `protected_branches`."""
+    names = set(PROTECTED)
+    head = subprocess.run(["git", "symbolic-ref", "-q", "--short", "refs/remotes/origin/HEAD"],
+                          capture_output=True, text=True).stdout.strip()
+    if head:
+        names.add(head.split("/", 1)[-1])
+    section = _config() or {}
+    extra = section.get("protected_branches", [])
+    names.update([extra] if isinstance(extra, str) else extra)
+    return names
 
 
 def has_commits() -> bool:
@@ -70,10 +90,11 @@ def violations(command: str) -> list[str]:
                 found.append("bypassing git hooks")
         if len(words) >= 2 and words[0] == "git" and words[1] == "push":
             targets = [w.split(":")[-1] for w in words[2:] if not w.startswith("-")]
-            if any(t in PROTECTED for t in targets) or (len(targets) <= 1 and current_branch() in PROTECTED):
+            protected = protected_branches()
+            if any(t in protected for t in targets) or (len(targets) <= 1 and current_branch() in protected):
                 found.append("pushing directly to a protected branch")
         if len(words) >= 2 and words[0] == "git" and words[1] in {"commit", "merge", "rebase", "cherry-pick"}:
-            if current_branch() in PROTECTED and words[1] != "rebase" and has_commits():
+            if current_branch() in protected_branches() and words[1] != "rebase" and has_commits():
                 found.append(f"running `git {words[1]}` on the protected branch '{current_branch()}'")
     return sorted(set(found))
 

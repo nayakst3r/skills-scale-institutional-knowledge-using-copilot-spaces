@@ -66,6 +66,7 @@ DEFAULT_CONFIG = {
     # packages the runtime provides, so they're legitimately not in a manifest (e.g. airflow on Cloud Composer /
     # MWAA / Fabric, pyspark and dbutils on Databricks)
     "provided_packages": [],
+    "protected_branches": [],
     # copies by design: examples, demos, fixtures and per-environment/per-stack overlays
     "duplicate_exclude": ["demo/**", "demos/**", "examples/**", "example/**", "**/fixtures/**", "**/overlay/**",
                           "**/overlays/**", "**/templates/**"],

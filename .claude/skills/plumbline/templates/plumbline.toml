@@ -17,6 +17,8 @@ require_ai_trailer = __REQUIRE_TRAILER__
 extra_banned_phrases = []
 # Work reaches agents only when a human applies this label to an issue. The guard blocks agents applying it.
 agent_ready_label = "ready-for-agent"
+# Branches only a reviewed pull request may change. The guard blocks agents committing or pushing to them directly.
+protected_branches = ["__DEFAULT_BRANCH__"]
 humans_release_work = true
 
 [plumbline.severity_overrides]
