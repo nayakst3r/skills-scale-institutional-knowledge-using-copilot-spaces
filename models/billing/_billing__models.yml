@@ -1,0 +1,11 @@
+version: 2
+models:
+  - name: billing_gold_daily_charges
+    description: Daily charges per account (AUD), GST shown separately. Complete days only.
+    columns:
+      - name: account_id
+        data_tests: [not_null]
+      - name: read_date
+        data_tests: [not_null]
+      - name: total_aud
+        data_tests: [not_null]
