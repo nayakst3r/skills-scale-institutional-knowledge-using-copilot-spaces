@@ -1,0 +1,12 @@
+[project]
+name = "kestrel-meter-data"
+version = "0.1.0"
+description = "Kestrel Energy (fictional) meter data platform: NEM12 ingestion and dbt models"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
